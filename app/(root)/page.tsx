@@ -11,7 +11,6 @@ const page = async () => {
   const user = await getUser()
   if(!user) redirect('/sign-in')
   const disks = await getAllDisks()
-  console.log(disks)
 
   return (
     <div className='flex flex-col h-full w-full pr-4 py-4'>

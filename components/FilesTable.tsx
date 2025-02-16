@@ -44,7 +44,7 @@ const FilesTable = ({ files }: Props) => {
                                 {item.type === 'folder' ? <FaFolder className='text-green-600' /> : <FaFile className='text-blue-600' />}
                             </div>
                         </div>
-                        <Link href={`${item.id}`} className='w-[50px] flex flex-1 py-2'>
+                        <Link href={`/folder/${item.id}`} className='w-[50px] flex flex-1 py-2'>
                             <p className='font-semibold'>{item.name}</p>
                         </Link>
                         <div className='w-[150px] flex justify-center py-2'>

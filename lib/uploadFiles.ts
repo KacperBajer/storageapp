@@ -24,7 +24,7 @@ export const uploadFiles = async (files: UploadedFile[], folderId: string) => {
             if(fileFolderPath[0] === '.') {
                 const query = 'INSERT INTO files (name, path, folder_id, user_id) VALUES ($1, $2, $3, $4)'
                 const result = await (conn as Pool).query(query, [file.name, file.savedPath, folderId, user.id])
-                return
+                continue
             }
 
 

@@ -9,7 +9,6 @@ type Props = {
 const FilePath = async ({ folderId }: Props) => {
 
   const path = await getFolderPath(folderId)
-  console.log(path)
 
   return (
     <div className='flex'>
@@ -21,7 +20,7 @@ const FilePath = async ({ folderId }: Props) => {
       {path?.map(item => (
         <Link
           key={item.id}
-          href={`/${item.id}`}
+          href={`/folder/${item.id}`}
         >
           <p>{item.name}/</p>
         </Link>

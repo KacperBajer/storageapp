@@ -17,7 +17,6 @@ const page = async ({ params }: { params?: Promise<any> }) => {
   if (!permissions.can_read) redirect('/')
 
   const files = await getFiles(folderid) || []
-  console.log(files)
 
   return (
     <div className='flex flex-col h-full w-full pr-4 py-4'>

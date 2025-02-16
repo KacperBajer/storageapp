@@ -35,7 +35,7 @@ const SideBar = () => {
                             <Link
                                 href={item.path}
                                 key={index}
-                                className={`flex items-center gap-3 hover:bg-black/20  ${path === item.path ? 'bg-black/40 text-blue-600' : 'border-transparent'} rounded-md px-4 py-1.5`}
+                                className={`flex items-center gap-3 hover:bg-black/20  ${path === item.path || (item.path === '/' && path.startsWith('/folder/')) ? 'bg-black/40 text-blue-600' : 'border-transparent'} rounded-md px-4 py-1.5`}
                             >
                                 {item.icon}
                                 <p>{item.title}</p>

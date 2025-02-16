@@ -25,7 +25,7 @@ const FileUploader = ({folderId}: Props) => {
 
         const id = uuidv4()
 
-        setProgress(prev => ([...prev, {id: id, value: 0, name: `Uploading ${files.length} files`}]));
+        setProgress(prev => ([...prev, {id: id, value: 0, name: `Uploading ${files.length === 1 ? files[0].name : `${files.length} files`}`}]));
 
         let filesWithPath: any[] = []
         const formData = new FormData();
@@ -99,7 +99,7 @@ const FileUploader = ({folderId}: Props) => {
                         <p className='text-center mb-2 text-sm'>{item.name}</p>
                         <div className='flex relative w-full'>
                             <div className='w-full h-1 rounded-full bg-dark-300'></div>
-                            <div className={`w-[${item.value}%] h-1 rounded-full bg-blue-500`}></div>
+                            <div style={{width: `${item.value}%`}} className={`left-0 top-0 absolute z-10 h-1 rounded-full bg-blue-500`}></div>
                         </div>
                         <p className='text-center mt-1 text-xs'>{item.value}%</p>
                     </div>
