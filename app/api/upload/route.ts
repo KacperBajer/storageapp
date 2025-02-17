@@ -4,6 +4,11 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
 
 const uploadDir = path.join("/mnt/hddstorage/", "uploads");
 if (!fs.existsSync(uploadDir)) {
