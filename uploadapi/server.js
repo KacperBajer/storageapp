@@ -5,10 +5,10 @@ const fs = require("fs");
 const cors = require("cors");
 
 const app = express();
-const PORT = 5000;
+const PORT = 3000;
 
 // Tworzymy folder "uploads" jeśli nie istnieje
-const uploadDir = path.join("F:", "uploads");
+const uploadDir = path.join("/mnt/hddstorage/", "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
