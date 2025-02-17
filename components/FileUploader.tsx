@@ -43,7 +43,7 @@ const FileUploader = ({folderId}: Props) => {
 
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", "http://78.31.151.253:5432/upload", true);
+            xhr.open("POST", "http://localhost:5000/upload", true);
 
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
