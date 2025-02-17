@@ -1,3 +1,4 @@
+'use client'
 import { UploadedFile } from '@/lib/types';
 import { uploadFiles } from '@/lib/uploadFiles';
 import React, { useState } from 'react'
