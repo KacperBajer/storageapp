@@ -19,11 +19,11 @@ type Progress = {
 const FileUploader = ({folderId}: Props) => {
     
     const [progress, setProgress] = useState<Progress[]>([]);
+    
     const handleUpload = async (files: File[]) => {
         if (files.length === 0) return;
     
         const id = uuidv4();
-    
         setProgress(prev => [
             ...prev,
             { id, value: 0, name: `Uploading ${files.length === 1 ? files[0].name : `${files.length} files`}` },
@@ -48,49 +48,63 @@ const FileUploader = ({folderId}: Props) => {
             formData.append("files", renamedFile);
         });
     
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "/api/upload", true);
+        const uploadWithRetry = (attempt: number = 1) => {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", "/api/upload", true);
     
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    const percent = Math.round((event.loaded / event.total) * 100);
-                    setProgress(prev => prev.map(p => (p.id === id ? { ...p, value: percent } : p)));
-                }
-            };
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const percent = Math.round((event.loaded / event.total) * 100);
+                        setProgress(prev => prev.map(p => (p.id === id ? { ...p, value: percent } : p)));
+                    }
+                };
     
-            xhr.onload = async () => {
-                if (xhr.status === 200) {
-                    setProgress(prev => prev.filter(p => p.id !== id));
-                    
-                    const response = JSON.parse(xhr.response);
-                    const mergedFiles: UploadedFile[] = response.files.map((file: any) => {
-                        const matchingFile = filesWithPath.find(f => f.uniqueName === file.filename);
+                xhr.onload = async () => {
+                    if (xhr.status === 200) {
+                        setProgress(prev => prev.filter(p => p.id !== id));
     
-                        return {
-                            savedPath: file.savedPath,
-                            ...(matchingFile ? matchingFile : {}),
-                        };
-                    });
+                        const response = JSON.parse(xhr.response);
+                        const mergedFiles: UploadedFile[] = response.files.map((file: any) => {
+                            const matchingFile = filesWithPath.find(f => f.uniqueName === file.filename);
     
-                    await uploadFiles(mergedFiles, folderId);
-                    toast.success("Files uploaded successfully");
-                    resolve(response);
-                } else {
-                    toast.error("Upload failed");
-                    reject(new Error("Upload failed"));
-                }
-            };
+                            return {
+                                savedPath: file.savedPath,
+                                ...(matchingFile ? matchingFile : {}),
+                            };
+                        });
     
-            xhr.onerror = () => {
-                console.error("Upload failed:", xhr.statusText, xhr.responseText);
-                toast.error("Upload failed");
-                reject(new Error("Upload failed"));
-            };
+                        await uploadFiles(mergedFiles, folderId);
+                        toast.success("Files uploaded successfully");
+                        resolve(response);
+                    } else {
+                        if (attempt < 3) {
+                            console.warn(`Upload failed, retrying... (${attempt}/3)`);
+                            setTimeout(() => uploadWithRetry(attempt + 1).then(resolve).catch(reject), 2000);
+                        } else {
+                            toast.error("Upload failed after multiple attempts");
+                            reject(new Error("Upload failed"));
+                        }
+                    }
+                };
     
-            xhr.send(formData);
-        });
-    };
+                xhr.onerror = () => {
+                    if (attempt < 3) {
+                        console.warn(`Connection lost, retrying... (${attempt}/3)`);
+                        setTimeout(() => uploadWithRetry(attempt + 1).then(resolve).catch(reject), 2000);
+                    } else {
+                        console.error("Upload failed:", xhr.statusText, xhr.responseText);
+                        toast.error("Upload failed");
+                        reject(new Error("Upload failed"));
+                    }
+                };
+    
+                xhr.send(formData);
+            });
+        };
+    
+        return uploadWithRetry();
+    };    
     
 
     return (
