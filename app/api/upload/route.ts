@@ -4,7 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-const uploadDir = path.join("/mnt/hddstorage/", "uploads");
+const uploadDir = path.join("/public", "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
