@@ -1,41 +1,44 @@
-import { NextResponse } from "next/server";
-import multer from "multer";
-import path from "path";
-import { writeFile } from "fs/promises";
+import { NextResponse } from 'next/server';
+import { IncomingForm } from 'formidable';
+import fs from 'fs';
+import path from 'path';
 
-// 📌 Ścieżka zapisu plików
-const uploadDir = "/mnt/hddstorage/uploads/";
+// Wyłącz domyślną obsługę body w Next.js (ważne!)
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
-// 📌 Obsługa uploadu (bez Multer)
 export async function POST(req) {
-    try {
-        const formData = await req.formData();
-        const files = formData.getAll("files");
+  try {
+    const uploadDir = '/mnt/storageapp/uploads';
 
-        if (!files.length) {
-            return NextResponse.json({ error: "No files uploaded" }, { status: 400 });
+    // Obsługa multipart/form-data
+    const form = new IncomingForm({
+      uploadDir,
+      multiples: false,
+      keepExtensions: true,
+      maxFileSize: 50 * 1024 * 1024 * 1024, // 50GB
+    });
+
+    return new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) {
+          reject(NextResponse.json({ error: 'Błąd przesyłania' }, { status: 500 }));
+          return;
         }
 
-        let uploadedFiles = [];
+        const file = files.file[0]; // Pobranie pliku
+        const filePath = path.join(uploadDir, file.originalFilename);
 
-        for (const file of files) {
-            if (!(file instanceof Blob)) continue;
+        // Przenoszenie pliku na docelową ścieżkę
+        fs.renameSync(file.filepath, filePath);
 
-            const buffer = Buffer.from(await file.arrayBuffer());
-            const fileName = `${Date.now()}-${file.name}`;
-            const filePath = path.join(uploadDir, fileName);
-
-            await writeFile(filePath, buffer); // Zapisz plik na serwerze
-
-            uploadedFiles.push({
-                filename: file.name,
-                savedPath: filePath,
-            });
-        }
-
-        return NextResponse.json({ message: "Files uploaded successfully", files: uploadedFiles });
-    } catch (error) {
-        console.error("Upload error:", error);
-        return NextResponse.json({ error: "Upload failed" }, { status: 500 });
-    }
+        resolve(NextResponse.json({ success: true, path: filePath }, { status: 200 }));
+      });
+    });
+  } catch (error) {
+    return NextResponse.json({ error: 'Wystąpił błąd' }, { status: 500 });
+  }
 }
