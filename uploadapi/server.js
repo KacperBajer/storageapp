@@ -5,7 +5,7 @@ const fs = require("fs");
 const cors = require("cors");
 
 const app = express();
-const PORT = 3000;
+const PORT = 5000;
 
 // Tworzymy folder "uploads" jeśli nie istnieje
 const uploadDir = path.join("/mnt/hddstorage/", "uploads");
