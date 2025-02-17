@@ -19,68 +19,79 @@ type Progress = {
 const FileUploader = ({folderId}: Props) => {
     
     const [progress, setProgress] = useState<Progress[]>([]);
-
     const handleUpload = async (files: File[]) => {
         if (files.length === 0) return;
-
-        const id = uuidv4()
-
-        setProgress(prev => ([...prev, {id: id, value: 0, name: `Uploading ${files.length === 1 ? files[0].name : `${files.length} files`}`}]));
-
-        let filesWithPath: any[] = []
+    
+        const id = uuidv4();
+    
+        setProgress(prev => [
+            ...prev,
+            { id, value: 0, name: `Uploading ${files.length === 1 ? files[0].name : `${files.length} files`}` },
+        ]);
+    
+        let filesWithPath: any[] = [];
         const formData = new FormData();
-        
+    
         files.forEach((file, index) => {
-            const fileExtension = file.name.split('.').pop(); 
+            const fileExtension = file.name.split('.').pop();
             const fileNameWithoutExt = file.name.replace(`.${fileExtension}`, '');
-            const uniqueFileName = `${fileNameWithoutExt}-${index + 1}.${fileExtension}`; 
-            
+            const uniqueFileName = `${fileNameWithoutExt}-${index + 1}.${fileExtension}`;
+    
             const renamedFile = new File([file], uniqueFileName, { type: file.type });
-            filesWithPath.push({uniqueName: uniqueFileName, name: file.name, lastModifiedDate: file.lastModified, path: (file as any).path})
-
+            filesWithPath.push({
+                uniqueName: uniqueFileName,
+                name: file.name,
+                lastModifiedDate: file.lastModified,
+                path: (file as any).path,
+            });
+    
             formData.append("files", renamedFile);
         });
-
+    
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open("POST", "/api/upload", true);
-
+    
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
                     const percent = Math.round((event.loaded / event.total) * 100);
-                    setProgress(prev => prev.map(p => p.id === id ? { ...p, value: percent } : p));
+                    setProgress(prev => prev.map(p => (p.id === id ? { ...p, value: percent } : p)));
                 }
             };
-
+    
             xhr.onload = async () => {
-                console.log(xhr.status)
                 if (xhr.status === 200) {
                     setProgress(prev => prev.filter(p => p.id !== id));
-                    const response = JSON.parse(xhr.response)
+                    
+                    const response = JSON.parse(xhr.response);
                     const mergedFiles: UploadedFile[] = response.files.map((file: any) => {
                         const matchingFile = filesWithPath.find(f => f.uniqueName === file.filename);
-                        
+    
                         return {
-                            savedPath: file.savedPath, 
+                            savedPath: file.savedPath,
                             ...(matchingFile ? matchingFile : {}),
                         };
                     });
-                    
-                    const addToDB = await uploadFiles(mergedFiles, folderId)
-                    toast.success('Files uploaded successfully')           
+    
+                    await uploadFiles(mergedFiles, folderId);
+                    toast.success("Files uploaded successfully");
+                    resolve(response);
                 } else {
-                    toast.error(`Upload failed`)
+                    toast.error("Upload failed");
+                    reject(new Error("Upload failed"));
                 }
             };
-
+    
             xhr.onerror = () => {
                 console.error("Upload failed:", xhr.statusText, xhr.responseText);
-                toast.error(`Upload failed`)
+                toast.error("Upload failed");
+                reject(new Error("Upload failed"));
             };
-
+    
             xhr.send(formData);
         });
     };
+    
 
     return (
         <>

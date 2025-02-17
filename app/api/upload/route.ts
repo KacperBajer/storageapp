@@ -1,36 +1,44 @@
-import { NextResponse } from 'next/server';
-import { IncomingForm } from 'formidable';
-import fs from 'fs';
-import path from 'path';
+import { NextRequest, NextResponse } from "next/server";
+import { createWriteStream } from "fs";
+import { mkdir } from "fs/promises";
+import path from "path";
 
-export const config = {
-  api: {
-    bodyParser: false, // Wyłączamy bodyParser, bo Formidable obsłuży strumień
-  },
-};
+export async function POST(req: NextRequest) {
+    // Tworzymy katalog, jeśli nie istnieje
+    const uploadDir = path.join(process.cwd(), "public/uploads");
+    await mkdir(uploadDir, { recursive: true });
 
-export async function POST(req) {
-  const uploadDir = path.join(process.cwd(), 'uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+    const formData = await req.formData();
+    const files = formData.getAll("files") as File[];
 
-  return new Promise((resolve, reject) => {
-    const form = new IncomingForm({
-      uploadDir,
-      keepExtensions: true,
-      maxFileSize: 50 * 1024 * 1024 * 1024, // 50GB limit
-    });
+    if (!files || files.length === 0) {
+        return NextResponse.json({ error: "No files provided" }, { status: 400 });
+    }
 
-    form.on('fileBegin', (name, file) => {
-      file.filepath = path.join(uploadDir, file.uniqueFileName);
-    });
+    const uploadedFiles = [];
 
-    form.parse(req, (err, fields, files) => {
-      if (err) {
-        reject(NextResponse.json({ error: 'File upload failed', details: err }, { status: 500 }));
-      }
-      resolve(NextResponse.json({ message: 'File uploaded successfully', files }));
-    });
-  });
+    for (const file of files) {
+        const filePath = path.join(uploadDir, file.name);
+        const stream = createWriteStream(filePath);
+        const reader = file.stream().getReader();
+
+        // Strumieniowe zapisywanie pliku
+        async function write() {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                stream.write(value);
+            }
+            stream.end();
+        }
+
+        await write();
+
+        uploadedFiles.push({
+            filename: file.name,
+            savedPath: `/uploads/${file.name}`,
+        });
+    }
+
+    return NextResponse.json({ files: uploadedFiles });
 }
