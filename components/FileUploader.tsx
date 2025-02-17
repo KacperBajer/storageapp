@@ -53,6 +53,7 @@ const FileUploader = ({folderId}: Props) => {
             };
 
             xhr.onload = async () => {
+                console.log(xhr.status)
                 if (xhr.status === 200) {
                     setProgress(prev => prev.filter(p => p.id !== id));
                     const response = JSON.parse(xhr.response)
