@@ -31,8 +31,8 @@ const upload = multer({
 
 // Middleware CORS, aby zezwolić na żądania z frontendu
 app.use(cors());
-app.use(express.json({ limit: "10gb" }));
-app.use(express.urlencoded({ limit: "10gb", extended: true }));
+app.use(express.json({ limit: "100gb" }));
+app.use(express.urlencoded({ limit: "100gb", extended: true }));
 // Endpoint do uploadu plików
 app.post("/upload", upload.array("files", 100000), (req, res) => {
     if (!req.files || req.files.length === 0) {
@@ -43,7 +43,7 @@ app.post("/upload", upload.array("files", 100000), (req, res) => {
 
     const uploadedFiles = req.files.map((file) => ({
         filename: file.originalname,
-        savedPath: `F:/uploads/${file.filename}`,
+        savedPath: `/mnt/hddstorage/${file.filename}`,
     }));
 
     res.json({ message: "Files uploaded successfully", files: uploadedFiles });
