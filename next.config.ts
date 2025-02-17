@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "102400mb", // Ograniczenie rozmiaru pliku dla Server Actions
     },
   },
+  api: {
+    bodyParser: false,
+  }
 };
 
 export default nextConfig;
