@@ -4,6 +4,13 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+module.exports = {
+  api: {
+      bodyParser: false, // ❌ Wyłącz parsowanie body
+  },
+};
+
+
 const uploadDir = path.join("/mnt/hddstorage/", "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -24,6 +31,11 @@ const upload = multer({
 }).array("files", 100000);
 
 export async function POST(req) {
+
+  console.log("Headers:", req.headers); // 🛑 Loguj nagłówki
+  console.log("Method:", req.method); // 📌 Sprawdź metodę
+  console.log("Body:", req.body); // 🔍 Sprawdź treść requesta
+
     return new Promise((resolve) => {
         upload(req, null, (err) => {
             if (err) {
