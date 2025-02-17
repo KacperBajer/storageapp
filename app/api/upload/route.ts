@@ -1,29 +1,41 @@
-import nextConnect from "next-connect";
-import multer from "multer";
 import { NextResponse } from "next/server";
+import multer from "multer";
+import path from "path";
+import { writeFile } from "fs/promises";
 
-// Konfiguracja Multer
-const upload = multer({ dest: "/mnt/hddstorage/uploads/" });
+// 📌 Ścieżka zapisu plików
+const uploadDir = "/mnt/hddstorage/uploads/";
 
-const apiRoute = nextConnect();
+// 📌 Obsługa uploadu (bez Multer)
+export async function POST(req) {
+    try {
+        const formData = await req.formData();
+        const files = formData.getAll("files");
 
-apiRoute.use(upload.array("files"));
+        if (!files.length) {
+            return NextResponse.json({ error: "No files uploaded" }, { status: 400 });
+        }
 
-apiRoute.post((req, res) => {
-    console.log("Received files:", req.files); // 🔍 Debugowanie
+        let uploadedFiles = [];
 
-    if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ error: "No files uploaded" });
+        for (const file of files) {
+            if (!(file instanceof Blob)) continue;
+
+            const buffer = Buffer.from(await file.arrayBuffer());
+            const fileName = `${Date.now()}-${file.name}`;
+            const filePath = path.join(uploadDir, fileName);
+
+            await writeFile(filePath, buffer); // Zapisz plik na serwerze
+
+            uploadedFiles.push({
+                filename: file.name,
+                savedPath: filePath,
+            });
+        }
+
+        return NextResponse.json({ message: "Files uploaded successfully", files: uploadedFiles });
+    } catch (error) {
+        console.error("Upload error:", error);
+        return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
-
-    res.json({ message: "Files uploaded", files: req.files });
-});
-
-// Eksport jako Edge API (Next.js 15)
-export const config = {
-    api: {
-        bodyParser: false, // ❌ Wyłącz defaultowy bodyParser
-    },
-};
-
-export default apiRoute;
+}
