@@ -4,7 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-const uploadDir = path.join("/public", "uploads");
+const uploadDir = path.join("/mnt/hddstorage/", "uploads");
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -27,6 +27,7 @@ export async function POST(req) {
     return new Promise((resolve) => {
         upload(req, null, (err) => {
             if (err) {
+                console.log(err.message)
                 return resolve(NextResponse.json({ error: err.message }, { status: 500 }));
             }
             if (!req.files || req.files.length === 0) {
