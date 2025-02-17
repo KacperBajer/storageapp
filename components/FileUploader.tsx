@@ -1,6 +1,6 @@
 import { UploadedFile } from '@/lib/types';
 import { uploadFiles } from '@/lib/uploadFiles';
-import React, { } from 'react'
+import React, { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import { toast } from 'react-toastify';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,14 +17,14 @@ type Progress = {
 
 const FileUploader = ({folderId}: Props) => {
     
-    //const [progress, setProgress] = useState<Progress[]>([]);
+    const [progress, setProgress] = useState<Progress[]>([]);
 
     const handleUpload = async (files: File[]) => {
         if (files.length === 0) return;
 
         const id = uuidv4()
 
-        //setProgress(prev => ([...prev, {id: id, value: 0, name: `Uploading ${files.length === 1 ? files[0].name : `${files.length} files`}`}]));
+        setProgress(prev => ([...prev, {id: id, value: 0, name: `Uploading ${files.length === 1 ? files[0].name : `${files.length} files`}`}]));
 
         let filesWithPath: any[] = []
         const formData = new FormData();
@@ -47,13 +47,13 @@ const FileUploader = ({folderId}: Props) => {
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
                     const percent = Math.round((event.loaded / event.total) * 100);
-                    //setProgress(prev => prev.map(p => p.id === id ? { ...p, value: percent } : p));
+                    setProgress(prev => prev.map(p => p.id === id ? { ...p, value: percent } : p));
                 }
             };
 
             xhr.onload = async () => {
                 if (xhr.status === 200) {
-                    //setProgress(prev => prev.filter(p => p.id !== id));
+                    setProgress(prev => prev.filter(p => p.id !== id));
                     const response = JSON.parse(xhr.response)
                     const mergedFiles: UploadedFile[] = response.files.map((file: any) => {
                         const matchingFile = filesWithPath.find(f => f.uniqueName === file.filename);
@@ -92,7 +92,7 @@ const FileUploader = ({folderId}: Props) => {
                     </section>
                 )}
             </Dropzone>
-            {/*progress.length > 0 && <div className='absolute bottom-5 right-5 flex flex-col gap-2'>
+            {progress.length > 0 && <div className='absolute bottom-5 right-5 flex flex-col gap-2'>
                 {progress.map(item => (
                     <div key={item.id} className='rounded-md bg-black/45 px-4 py-2.5 w-[200px]'>
                         <p className='text-center mb-2 text-sm'>{item.name}</p>
@@ -103,7 +103,7 @@ const FileUploader = ({folderId}: Props) => {
                         <p className='text-center mt-1 text-xs'>{item.value}%</p>
                     </div>
                 ))}
-            </div>*/}
+            </div>}
         </>
     )
 }
