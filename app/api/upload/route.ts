@@ -1,54 +1,29 @@
-// app/api/upload/route.js
-import { NextResponse } from "next/server";
+import nextConnect from "next-connect";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { NextResponse } from "next/server";
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
+// Konfiguracja Multer
+const upload = multer({ dest: "/mnt/hddstorage/uploads/" });
 
-const uploadDir = path.join("/mnt/hddstorage/", "uploads");
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+const apiRoute = nextConnect();
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    },
+apiRoute.use(upload.array("files"));
+
+apiRoute.post((req, res) => {
+    console.log("Received files:", req.files); // 🔍 Debugowanie
+
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: "No files uploaded" });
+    }
+
+    res.json({ message: "Files uploaded", files: req.files });
 });
 
-const upload = multer({
-    storage,
-    limits: { fileSize: 1024 * 1024 * 1024 * 100 }, // 100GB
-}).array("files", 100000);
+// Eksport jako Edge API (Next.js 15)
+export const config = {
+    api: {
+        bodyParser: false, // ❌ Wyłącz defaultowy bodyParser
+    },
+};
 
-export async function POST(req) {
-
-  console.log("Headers:", req.headers); // 🛑 Loguj nagłówki
-  console.log("Method:", req.method); // 📌 Sprawdź metodę
-  console.log("Body:", req.body); // 🔍 Sprawdź treść requesta
-
-    return new Promise((resolve) => {
-        upload(req, null, (err) => {
-            if (err) {
-                console.log(err.message)
-                return resolve(NextResponse.json({ error: err.message }, { status: 500 }));
-            }
-            if (!req.files || req.files.length === 0) {
-                return resolve(NextResponse.json({ error: "No files uploaded" }, { status: 400 }));
-            }
-            const uploadedFiles = req.files.map((file) => ({
-                filename: file.originalname,
-                savedPath: `F:/uploads/${file.filename}`,
-            }));
-            resolve(NextResponse.json({ message: "Files uploaded successfully", files: uploadedFiles }));
-        });
-    });
-}
+export default apiRoute;
