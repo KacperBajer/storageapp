@@ -28,7 +28,7 @@ export default async function handler(
   console.log('token', token)
 
   try {
-    const uploadDir = path.join("/mnt/hddstorage", "/uploads");
+    const uploadDir = path.join("/mnt/hhdstorage", "/uploads");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -50,7 +50,7 @@ export default async function handler(
       .flat()
       .map((file) => ({
         filename: (file as formidable.File).newFilename,
-        savedPath: `/mnt/hddstorage/uploads/${(file as formidable.File).newFilename}`,
+        savedPath: `/mnt/hhdstorage/uploads/${(file as formidable.File).newFilename}`,
         originalName: (file as formidable.File).originalFilename,
       }));
 

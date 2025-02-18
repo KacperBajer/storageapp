@@ -8,6 +8,8 @@ import { getUser } from "./users";
 export const uploadFiles = async (files: UploadedFile[], folderId: string, token: string) => {
     try {
 
+        console.log(folderId)
+
         if(!token) return 'error'
 
         const query = 'SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()'
