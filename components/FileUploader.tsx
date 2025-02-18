@@ -30,6 +30,8 @@ const FileUploader = ({folderId}: Props) => {
         let filesWithPath: any[] = []
         const formData = new FormData();
         
+        formData.append("folderId", folderId);
+
         files.forEach((file, index) => {
             const fileExtension = file.name.split('.').pop(); 
             const fileNameWithoutExt = file.name.replace(`.${fileExtension}`, '');
@@ -41,9 +43,11 @@ const FileUploader = ({folderId}: Props) => {
             formData.append("files", renamedFile);
         });
 
+        formData.append("filesWithPath", JSON.stringify(filesWithPath))
+
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", "http://localhost:5000/upload", true);
+            xhr.open("POST", "/api/upload", true);
 
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
@@ -55,17 +59,6 @@ const FileUploader = ({folderId}: Props) => {
             xhr.onload = async () => {
                 if (xhr.status === 200) {
                     setProgress(prev => prev.filter(p => p.id !== id));
-                    const response = JSON.parse(xhr.response)
-                    const mergedFiles: UploadedFile[] = response.files.map((file: any) => {
-                        const matchingFile = filesWithPath.find(f => f.uniqueName === file.filename);
-                        
-                        return {
-                            savedPath: file.savedPath, 
-                            ...(matchingFile ? matchingFile : {}),
-                        };
-                    });
-                    
-                    const addToDB = await uploadFiles(mergedFiles, folderId)
                     toast.success('Files uploaded successfully')           
                 } else {
                     toast.error(`Upload failed`)
