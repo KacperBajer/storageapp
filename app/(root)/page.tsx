@@ -15,7 +15,7 @@ const page = async () => {
   return (
     <div className='flex flex-col h-full w-full pr-4 py-4'>
       <Header user={user} />
-      <div className='flex flex-col p-4 bg-black/35 rounded-md mt-4 flex-1'>
+      <div className='flex flex-col px-4 pt-4 bg-black/35 rounded-md mt-4 flex-1'>
         <div className='flex justify-between items-center mb-4'>
           <FilePath folderId='0' />
         </div>

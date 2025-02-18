@@ -14,9 +14,9 @@ type Props = {
 const FilesTable = ({ files }: Props) => {
 
     return (
-        <div className='overflow-x-auto'>
-            <div className='flex flex-col'>
-                <div className='flex border-b border-dark-200 items-center py-2 text-sm text-gray-300'>
+        <div className='overflow-auto hideScrollbar'>
+            <div className='flex flex-col relative max-h-[calc(100vh-180px)] min-w-[600px]'>
+                <div className='flex border-b sticky top-0 border-dark-200 items-center bg-[#0b0b0b] py-2 text-sm text-gray-300'>
                     <div className='w-[50px] flex justify-center'>
                         <div className='p-1.5 rounded-md bg-black/60'>
                             <FaFolder />
@@ -37,8 +37,8 @@ const FilesTable = ({ files }: Props) => {
                         </div>                    
                     </div>
                 </div>
-                {files?.map(item => (
-                    <div key={item.id} className='flex border-b border-dark-200 items-center'>
+                {files?.map((item, index) => (
+                    <div key={item.id} className={`flex ${files.length !== index + 1 && 'border-b border-dark-200'} items-center`}>
                         <div className='w-[50px] flex justify-center py-2'>
                             <div className='p-1.5 rounded-md bg-black/60'>
                                 {item.type === 'folder' ? <FaFolder className='text-green-600' /> : <FaFile className='text-blue-600' />}
