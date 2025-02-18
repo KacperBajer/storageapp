@@ -7,9 +7,6 @@ import { getUser } from "./users";
 
 export const uploadFiles = async (files: UploadedFile[], folderId: string, token: string) => {
     try {
-
-        console.log(files)
-
         if(!token) return 'error'
 
         const query = 'SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()'
@@ -27,7 +24,9 @@ export const uploadFiles = async (files: UploadedFile[], folderId: string, token
             const pathParts = path.split("/").filter((part: string) => part !== ""); 
             const fileFolderPath = pathParts.slice(0, -1); 
             
-            if(fileFolderPath[0] === '.') {
+            console.log(fileFolderPath)
+
+            if(fileFolderPath[0] === '.' || fileFolderPath.length === 0) {
                 const query = 'INSERT INTO files (name, path, folder_id, user_id) VALUES ($1, $2, $3, $4)'
                 const result = await (conn as Pool).query(query, [file.name, file.savedPath, folderId, user])
                 continue
