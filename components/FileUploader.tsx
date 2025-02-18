@@ -43,6 +43,8 @@ const FileUploader = ({folderId}: Props) => {
             formData.append("files", renamedFile);
         });
 
+        console.log(filesWithPath)
+
         formData.append("filesWithPath", JSON.stringify(filesWithPath))
 
         return new Promise((resolve, reject) => {
