@@ -8,7 +8,7 @@ import { getUser } from "./users";
 export const uploadFiles = async (files: UploadedFile[], folderId: string, token: string) => {
     try {
 
-        console.log(folderId)
+        console.log(files)
 
         if(!token) return 'error'
 
