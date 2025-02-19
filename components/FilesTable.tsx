@@ -2,7 +2,7 @@
 import { File } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { FaFolder } from "react-icons/fa";
 import { IoIosMore } from "react-icons/io";
 import { FaFile } from "react-icons/fa";
@@ -13,12 +13,10 @@ type Props = {
 
 const FilesTable = ({ files }: Props) => {
 
-    const [progress, setProgress] = useState(null)
-
     const download = async (id: string) => {
         const a = document.createElement("a");
-        a.href = `/api/download?id=${id}`; // Bezpośredni link do API
-        a.download = ""; // Informuje przeglądarkę o pobieraniu
+        a.href = `/api/download?id=${id}`;
+        a.download = "";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -28,7 +26,7 @@ const FilesTable = ({ files }: Props) => {
   return (
     <div className="overflow-auto hideScrollbar">
       <div className="flex flex-col relative max-h-[calc(100vh-180px)] min-w-[600px]">
-        <div className="flex border-b sticky top-0 border-dark-200 items-center bg-[#0b0b0b] py-2 text-sm text-gray-300">
+        <section className="flex border-b sticky top-0 border-dark-200 items-center bg-[#0b0b0b] py-2 text-sm text-gray-300">
           <div className="w-[50px] flex justify-center">
             <div className="p-1.5 rounded-md bg-black/60">
               <FaFolder />
@@ -48,7 +46,7 @@ const FilesTable = ({ files }: Props) => {
               <IoIosMore />
             </div>
           </div>
-        </div>
+        </section>
         {files?.map((item, index) => (
           <div
             key={item.id}
@@ -74,10 +72,10 @@ const FilesTable = ({ files }: Props) => {
               </Link>
             ) : (
               <button
-                onClick={() => download(item.id, item.name)}
+                onClick={() => download(item.id)}
                 className="w-[50px] flex flex-1 py-2"
               >
-                <p className="font-semibold">{progress ? progress : item.name}</p>
+                <p className="font-semibold">{item.name}</p>
               </button>
             )}
             <div className="w-[150px] flex justify-center py-2">

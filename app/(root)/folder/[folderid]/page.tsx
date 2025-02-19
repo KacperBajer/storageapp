@@ -1,3 +1,4 @@
+import CreateDirectory from "@/components/CreateDirectory";
 import FilePath from "@/components/FilePath";
 import FilesTable from "@/components/FilesTable";
 import FileUploader from "@/components/FileUploader";
@@ -23,7 +24,10 @@ const page = async ({ params }: { params?: Promise<any> }) => {
       <div className="flex flex-col flex-1 px-4 pt-4 bg-black/35 rounded-md mt-4">
         <div className="flex justify-between items-center mb-4">
           <FilePath folderId={folderid} />
-          {permissions.can_write && <FileUploader folderId={folderid} />}
+          <div>
+            {permissions.can_write && <FileUploader folderId={folderid} />}
+            {permissions.can_write && <CreateDirectory folderId={folderid} />}
+          </div>
         </div>
         <FilesTable files={files} />
       </div>
