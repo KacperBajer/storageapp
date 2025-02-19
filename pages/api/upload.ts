@@ -20,6 +20,8 @@ export default async function handler(
     return res.status(405).json({ error: "Method Not Allowed" });
   }
   
+  req.setTimeout(1800000) // 30 min
+
   const cookies = req.headers.cookie || ""
   const token = cookies
     .split("; ")
@@ -38,7 +40,6 @@ export default async function handler(
       maxFileSize: 100 * 1024 * 1024 * 1024, // 100GB
       uploadDir,
       filename: (name, ext, part) => `${Date.now()}-${part.originalFilename}`,
-      timeout: 10 * 60 * 1000,
     });
 
     const [fields, files] = await form.parse(req);
