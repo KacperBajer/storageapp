@@ -89,7 +89,7 @@ const FileUploader = ({folderId}: Props) => {
             </Dropzone>
             {progress.length > 0 && <div className='absolute bottom-5 right-5 flex flex-col gap-2'>
                 {progress.map(item => (
-                    <div key={item.id} className='rounded-md bg-black/45 px-4 py-2.5 w-[200px]'>
+                    <div key={item.id} className='rounded-md bg-[#1a1a1a] px-4 py-2.5 w-[200px]'>
                         <p className='text-center mb-2 text-sm'>{item.name}</p>
                         <div className='flex relative w-full'>
                             <div className='w-full h-1 rounded-full bg-dark-300'></div>

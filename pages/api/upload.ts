@@ -43,7 +43,16 @@ export default async function handler(
       filename: (name, ext, part) => `${Date.now()}-${part.originalFilename}`,
     });
 
-    const [fields, files] = await form.parse(req);
+    const [fields, files] = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) {
+          console.error("Formidable parsing error:", err);
+          reject(err);
+        } else {
+          resolve([fields, files]);
+        }
+      });
+    });
     const folderId = fields.folderId?.[0] || ''
     const filesWithPath = fields.filesWithPath
       ? JSON.parse(fields.filesWithPath[0])
