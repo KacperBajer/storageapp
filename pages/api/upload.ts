@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { uploadFiles } from "@/lib/uploadFiles";
 import { UploadedFile } from "@/lib/types";
+import { revalidatePath } from "next/cache";
 
 // Konfiguracja Next.js, aby wyłączyć domyślną obsługę body parsera
 export const config = {
@@ -72,6 +73,8 @@ export default async function handler(
       return res.status(500).json({ error: "File upload failed" });
     }
 
+    
+    revalidatePath(`/folder/${folderId}`)
     return res.status(200).json({ success: true, files: uploadedFiles });
   } catch (error) {
     console.error("Upload error:", error);

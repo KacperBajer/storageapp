@@ -25,8 +25,8 @@ const page = async ({ params }: { params?: Promise<any> }) => {
         <div className="flex justify-between items-center mb-4">
           <FilePath folderId={folderid} />
           <div className="flex items-center gap-2"> 
-            {permissions.can_write && <FileUploader folderId={folderid} />}
             {permissions.can_write && <CreateDirectory folderId={folderid} />}
+            {permissions.can_write && <FileUploader folderId={folderid} />}
           </div>
         </div>
         <FilesTable files={files} />

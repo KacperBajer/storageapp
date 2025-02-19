@@ -3,6 +3,8 @@
 import { Pool } from "pg"
 import conn from "./db"
 import { getUser } from "./users"
+import { getFolderPermissions } from "./permissions"
+import { revalidatePath } from "next/cache"
 
 export const getFiles = async (folderId: string) => {
     try {
@@ -47,6 +49,7 @@ export const getFiles = async (folderId: string) => {
         return result.rows
     } catch (error) {
         console.log(error)
+        return []
     }
 }
 
@@ -109,5 +112,23 @@ export const getFile = async (id: string, token: string) => {
     } catch (error) {
         console.log(error)
         return []
+    }
+}
+
+type CreateDirectoryResponse = | {status: 'error', error?: string} | {status: 'success'}
+export const createDirectory = async (folderId: string, name: string) => {
+    try {
+        const user = await getUser()
+        if(!user) return {status: 'error', error: "You have to sign in!"} as CreateDirectoryResponse
+        const permissions = await getFolderPermissions(folderId)
+        if(!permissions.can_write) return {status: 'error', error: "You do not have permissions!"} as CreateDirectoryResponse
+
+        const query = `INSERT INTO folders (name, parent_id, user_id) VALUES ($1, $2, $3)`
+        const result = await (conn as Pool).query(query, [name, folderId, user.id])
+        revalidatePath(`/folder/${folderId}`)
+        return {status: 'success'} as CreateDirectoryResponse
+    } catch (error) {
+        console.log(error)
+        return {status: 'error', error: "Something went wrong!"} as CreateDirectoryResponse
     }
 }

@@ -26,7 +26,7 @@ const FilesTable = ({ files }: Props) => {
   return (
     <div className="overflow-auto hideScrollbar">
       <div className="flex flex-col relative max-h-[calc(100vh-180px)] min-w-[600px]">
-        <section className="flex border-b sticky top-0 border-dark-200 items-center bg-[#0b0b0b] py-2 text-sm text-gray-300">
+        <section className="flex border-b sticky top-0 border-dark-200 items-center bg-dark-300 py-2 text-sm text-gray-300">
           <div className="w-[50px] flex justify-center">
             <div className="p-1.5 rounded-md bg-black/60">
               <FaFolder />
@@ -55,7 +55,7 @@ const FilesTable = ({ files }: Props) => {
             } items-center`}
           >
             <div className="w-[50px] flex justify-center py-2">
-              <div className="p-1.5 rounded-md bg-black/60">
+              <div className="p-1.5 rounded-md bg-dark-300">
                 {item.type === "folder" ? (
                   <FaFolder className="text-green-600" />
                 ) : (
