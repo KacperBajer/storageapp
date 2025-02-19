@@ -9,6 +9,7 @@ import { UploadedFile } from "@/lib/types";
 export const config = {
   api: {
     bodyParser: false,
+    externalResolver: true,
   },
 };
 
@@ -19,8 +20,8 @@ export default async function handler(
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
-  
-  req.setTimeout(1800000) // 30 min
+
+  req.setTimeout(0);
 
   const cookies = req.headers.cookie || ""
   const token = cookies
