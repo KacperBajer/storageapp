@@ -34,11 +34,10 @@ export default async function handler(
 
     const stats = await fsPromises.stat(file[0].path);
     res.writeHead(200, {
-      "Content-Disposition": 
-      `attachment; filename=${file[0].name}`,
-      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="${file[0].name}"`,
+      "Content-Type": "application/octet-stream",
       "Content-Length": stats.size,
-    });
+  });
     await new Promise(function (resolve) {
       const nodeStream = fs.createReadStream(file[0].path);
       nodeStream.pipe(res);

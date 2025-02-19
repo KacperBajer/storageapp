@@ -27,7 +27,14 @@ const FilesTable = ({ files }: Props) => {
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        window.open(url, "_blank");
+        const a = document.createElement("a");
+        a.href = url;
+        a.setAttribute("download", ""); 
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
     } catch (error) {
       console.log(error);
     }
