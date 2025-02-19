@@ -13,32 +13,75 @@ type Props = {
 };
 
 const FilesTable = ({ files }: Props) => {
-  const download = async (id: string, name: string) => {
-    try {
-        const response = await fetch(`/api/download?id=${id}`, {
+    const download = async (id: string, name: string) => {
+        try {
+          const response = await fetch(`/api/download?id=${id}`, {
             method: "GET",
             credentials: "include",
           });
-        
-        if (!response.ok) {
+      
+          if (!response.ok) {
             alert('File not found');
             return;
+          }
+      
+          const contentLength = response.headers.get("content-length");
+          const total = parseInt(contentLength || "0", 10);
+      
+          if (total === 0) {
+            alert('Unknown file size');
+            return;
+          }
+      
+          let loaded = 0;
+          const speedDisplay = document.getElementById("speedDisplay");
+          const progressDisplay = document.getElementById("progressDisplay");
+          const startTime = Date.now();
+      
+          const reader = response.body.getReader();
+          const stream = new ReadableStream({
+            start(controller) {
+              function push() {
+                reader.read().then(({ done, value }) => {
+                  if (done) {
+                    controller.close();
+                    return;
+                  }
+      
+                  loaded += value.byteLength;
+                  const elapsedTime = (Date.now() - startTime) / 1000;
+                  const speed = (loaded / elapsedTime).toFixed(2);
+      
+                  if (progressDisplay) {
+                    progressDisplay.innerText = `Progress: ${((loaded / total) * 100).toFixed(2)}%`;
+                  }
+                  if (speedDisplay) {
+                    speedDisplay.innerText = `Speed: ${speed} bytes/sec`;
+                  }
+      
+                  controller.enqueue(value);
+                  push();
+                });
+              }
+      
+              push();
+            }
+          });
+      
+          const newResponse = new Response(stream);
+          const blob = await newResponse.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.log(error);
         }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.setAttribute("download", ""); 
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+      };
+      
 
   return (
     <div className="overflow-auto hideScrollbar">
