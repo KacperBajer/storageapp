@@ -1,6 +1,7 @@
 'use client'
 import { UploadedFile } from '@/lib/types';
 import { uploadFiles } from '@/lib/uploadFiles';
+import { revalidatePath } from 'next/cache';
 import React, { useState } from 'react'
 import Dropzone from 'react-dropzone'
 import { toast } from 'react-toastify';
@@ -60,6 +61,7 @@ const FileUploader = ({folderId}: Props) => {
             xhr.onload = async () => {
                 if (xhr.status === 200) {
                     setProgress(prev => prev.filter(p => p.id !== id));
+                    revalidatePath(`/folder/${folderId}`)
                     toast.success('Files uploaded successfully')           
                 } else {
                     toast.error(`Upload failed`)
