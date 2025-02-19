@@ -35,8 +35,10 @@ export default async function handler(
       return res.status(404).json({ error: "File not found" });
     }
 
-    res.setHeader("Content-Disposition", `attachment; filename=${file[0].name}`);
-    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader('Content-Disposition', `attachment; filename="${file[0].name}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Cache-Control', 'no-store');
 
     const fileStream = fs.createReadStream(file[0].path);
     fileStream.pipe(res);
