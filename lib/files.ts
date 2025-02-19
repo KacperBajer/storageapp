@@ -78,3 +78,30 @@ export const getFolderPath = async (folderId: string) => {
         return []
     }
 }
+
+export const getFile = async (id: string) => {
+    try {
+        const user = await getUser()
+        if (!user) return
+        const query = ` SELECT 
+                f.id, 
+                f.name, 
+                f.created_at,
+                f.path,
+                'file' AS type,
+                p.can_read, 
+                p.can_write, 
+                p.can_delete,
+                p.inherit
+            FROM files f
+            JOIN permissions p ON p.file_id = f.id
+            WHERE f.id = $1
+            AND p.user_id = $2
+            AND p.can_read = TRUE`
+        const result = await (conn as Pool).query(query, [id, user.id])
+        return result.rows
+    } catch (error) {
+        console.log(error)
+        return []
+    }
+}
