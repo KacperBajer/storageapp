@@ -2,11 +2,10 @@
 import { File } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaFolder } from "react-icons/fa";
 import { IoIosMore } from "react-icons/io";
 import { FaFile } from "react-icons/fa";
-import { downloadFile } from "@/lib/download";
 
 type Props = {
   files: File[];
@@ -14,68 +13,23 @@ type Props = {
 
 const FilesTable = ({ files }: Props) => {
 
-    const [progress, setProgress] = useState()
+    const [progress, setProgress] = useState(null)
     
-    const download = async (id: string, name: string) => {
-        try {
-          const response = await fetch(`/api/download?id=${id}`, {
-            method: "GET",
-            credentials: "include",
+    useEffect(() => {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("/sw.js").catch((err) => {
+            console.error("Service Worker registration failed:", err);
           });
-      
-          if (!response.ok) {
-            alert('File not found');
-            return;
-          }
-      
-          const contentLength = response.headers.get("content-length");
-          const total = parseInt(contentLength || "0", 10);
-      
-          if (total === 0) {
-            alert('Unknown file size');
-            return;
-          }
-      
-          let loaded = 0;
-          const startTime = Date.now();
-      
-          const reader = response.body.getReader();
-          const stream = new ReadableStream({
-            start(controller) {
-              function push() {
-                reader.read().then(({ done, value }) => {
-                  if (done) {
-                    controller.close();
-                    return;
-                  }
-      
-                  loaded += value.byteLength;
-                  const elapsedTime = (Date.now() - startTime) / 1000;
-                  const speed = (loaded / elapsedTime).toFixed(2);
-      
-                 setProgress(((loaded / total) * 100).toFixed(2))
-      
-                  controller.enqueue(value);
-                  push();
-                });
-              }
-      
-              push();
-            }
-          });
-      
-          const newResponse = new Response(stream);
-          const blob = await newResponse.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = name;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-        } catch (error) {
-          console.log(error);
         }
+      }, []);
+
+      const download = async (id: string, name: string) => {
+        if (!navigator.serviceWorker || !navigator.serviceWorker.controller) {
+          alert("Service Worker not supported");
+          return;
+        }
+      
+        navigator.serviceWorker.controller.postMessage({ id, name });
       };
       
 
