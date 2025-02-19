@@ -14,22 +14,14 @@ type Props = {
 const FilesTable = ({ files }: Props) => {
 
     const [progress, setProgress] = useState(null)
-    
-    useEffect(() => {
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.register("/sw.js").catch((err) => {
-            console.error("Service Worker registration failed:", err);
-          });
-        }
-      }, []);
 
-      const download = async (id: string, name: string) => {
-        if (!navigator.serviceWorker || !navigator.serviceWorker.controller) {
-          alert("Service Worker not supported");
-          return;
-        }
-      
-        navigator.serviceWorker.controller.postMessage({ id, name });
+    const download = async (id: string) => {
+        const a = document.createElement("a");
+        a.href = `/api/download?id=${id}`; // Bezpośredni link do API
+        a.download = ""; // Informuje przeglądarkę o pobieraniu
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       };
       
 
