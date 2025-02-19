@@ -2,7 +2,7 @@
 import { File } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import { FaFolder } from "react-icons/fa";
 import { IoIosMore } from "react-icons/io";
 import { FaFile } from "react-icons/fa";
@@ -13,6 +13,9 @@ type Props = {
 };
 
 const FilesTable = ({ files }: Props) => {
+
+    const [progress, setProgress] = useState()
+    
     const download = async (id: string, name: string) => {
         try {
           const response = await fetch(`/api/download?id=${id}`, {
@@ -34,8 +37,6 @@ const FilesTable = ({ files }: Props) => {
           }
       
           let loaded = 0;
-          const speedDisplay = document.getElementById("speedDisplay");
-          const progressDisplay = document.getElementById("progressDisplay");
           const startTime = Date.now();
       
           const reader = response.body.getReader();
@@ -52,12 +53,7 @@ const FilesTable = ({ files }: Props) => {
                   const elapsedTime = (Date.now() - startTime) / 1000;
                   const speed = (loaded / elapsedTime).toFixed(2);
       
-                  if (progressDisplay) {
-                    progressDisplay.innerText = `Progress: ${((loaded / total) * 100).toFixed(2)}%`;
-                  }
-                  if (speedDisplay) {
-                    speedDisplay.innerText = `Speed: ${speed} bytes/sec`;
-                  }
+                 setProgress(((loaded / total) * 100).toFixed(2))
       
                   controller.enqueue(value);
                   push();
@@ -135,7 +131,7 @@ const FilesTable = ({ files }: Props) => {
                 onClick={() => download(item.id, item.name)}
                 className="w-[50px] flex flex-1 py-2"
               >
-                <p className="font-semibold">{item.name}</p>
+                <p className="font-semibold">{progress ? progress : item.name}</p>
               </button>
             )}
             <div className="w-[150px] flex justify-center py-2">
