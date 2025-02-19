@@ -37,13 +37,12 @@ export default async function handler(
       "Content-Disposition": `attachment; filename="${file[0].name}"`,
       "Content-Type": "application/octet-stream",
       "Content-Length": stats.size,
-  });
-    await new Promise(function (resolve) {
-      const nodeStream = fs.createReadStream(file[0].path);
-      nodeStream.pipe(res);
-      nodeStream.on("end", resolve);
     });
+
+    const readStream = fs.createReadStream(file[0].path);
+    readStream.pipe(res);
   } catch (error) {
-    console.log(error)
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 }
