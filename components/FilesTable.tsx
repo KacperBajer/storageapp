@@ -15,39 +15,24 @@ type Props = {
 const FilesTable = ({ files }: Props) => {
   const download = async (id: string, name: string) => {
     try {
-        const url = `/api/download?id=${encodeURIComponent(id)}`;
-        const response = await fetch(url);
+        const response = await fetch(`/api/download?id=${id}`, {
+            method: "GET",
+            credentials: "include",
+          });
         
         if (!response.ok) {
             alert('File not found');
             return;
         }
 
-        const reader = response.body.getReader();
-        const stream = new ReadableStream({
-            start(controller) {
-                function push() {
-                    reader.read().then(({ done, value }) => {
-                        if (done) {
-                            controller.close();
-                            return;
-                        }
-                        controller.enqueue(value);
-                        push();
-                    });
-                }
-                push();
-            }
-        });
-
-        const blob = await new Response(stream).blob();
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = name;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+    const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.log(error);
     }

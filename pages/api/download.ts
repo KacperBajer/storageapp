@@ -2,6 +2,7 @@ import { getFile } from "@/lib/files";
 import fs from "fs";
 import { NextApiRequest, NextApiResponse } from "next";
 import path from "path";
+const fsPromises = require('fs').promises;
 
 export const config = {
   api: {
@@ -31,17 +32,18 @@ export default async function handler(
   try {
     const file = await getFile(id as string, token as string);
 
-    if (!fs.existsSync(file[0].path)) {
-      return res.status(404).json({ error: "File not found" });
-    }
-
-    res.setHeader('Content-Disposition', `attachment; filename="${file[0].name}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Transfer-Encoding', 'chunked');
-    res.setHeader('Cache-Control', 'no-store');
-
-    const fileStream = fs.createReadStream(file[0].path);
-    fileStream.pipe(res);
+    const stats = await fsPromises.stat(file[0].path);
+    res.writeHead(200, {
+      "Content-Disposition": 
+      `attachment; filename=${file[0].name}`,
+      "Content-Type": "application/zip",
+      "Content-Length": stats.size,
+    });
+    await new Promise(function (resolve) {
+      const nodeStream = fs.createReadStream(file[0].path);
+      nodeStream.pipe(res);
+      nodeStream.on("end", resolve);
+    });
   } catch (error) {
     console.log(error)
   }
