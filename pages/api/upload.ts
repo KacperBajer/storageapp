@@ -28,7 +28,6 @@ export default async function handler(
     .split("; ")
     .find((row) => row.startsWith("token=")) 
     ?.split("=")[1]; 
-  console.log('token', token)
 
   try {
     const uploadDir = path.join("/mnt/hhdstorage", "/uploads");

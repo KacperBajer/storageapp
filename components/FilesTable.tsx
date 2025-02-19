@@ -15,13 +15,14 @@ type Props = {
 const FilesTable = ({ files }: Props) => {
   const download = async (id: string, name: string) => {
     try {
-      const response = await downloadFile(id);
-      if(!response) return
+      const url = `/api/download?id=${encodeURIComponent(id)}`;
+      const response = await fetch(url);
+      if (!response.ok) return;
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = name
+      link.download = name;
       document.body.appendChild(link);
       link.click();
       link.remove();

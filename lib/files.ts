@@ -79,10 +79,16 @@ export const getFolderPath = async (folderId: string) => {
     }
 }
 
-export const getFile = async (id: string) => {
+export const getFile = async (id: string, token: string) => {
     try {
-        const user = await getUser()
-        if (!user) return
+        if(!token) return 'error'
+
+        const queryUser = 'SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()'
+    
+        const resultUser = await (conn as Pool).query(queryUser, [token]);
+        if (resultUser.rows.length === 0) return 'error'
+        let user = resultUser.rows[0].user_id
+
         const query = ` SELECT 
                 f.id, 
                 f.name, 
@@ -98,7 +104,7 @@ export const getFile = async (id: string) => {
             WHERE f.id = $1
             AND p.user_id = $2
             AND p.can_read = TRUE`
-        const result = await (conn as Pool).query(query, [id, user.id])
+        const result = await (conn as Pool).query(query, [id, user])
         return result.rows
     } catch (error) {
         console.log(error)
