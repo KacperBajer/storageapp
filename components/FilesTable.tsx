@@ -13,14 +13,14 @@ type Props = {
 
 const FilesTable = ({ files }: Props) => {
 
-    const download = async (id: string) => {
-        const a = document.createElement("a");
-        a.href = `/api/download?id=${id}`;
-        a.download = "";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      };
+  const download = async (id: string, type: "file" | "folder") => {
+    const a = document.createElement("a");
+    a.href = `/api/download?id=${id}&type=${type}`;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
       
 
   return (
@@ -63,7 +63,7 @@ const FilesTable = ({ files }: Props) => {
                 )}
               </div>
             </div>
-            {item.type === "folder" ? (
+            {item.type ? (
               <Link
                 href={`/folder/${item.id}`}
                 className="w-[50px] flex flex-1 py-2"
@@ -72,7 +72,7 @@ const FilesTable = ({ files }: Props) => {
               </Link>
             ) : (
               <button
-                onClick={() => download(item.id)}
+                onClick={() => download(item.id, item.type)}
                 className="w-[50px] flex flex-1 py-2"
               >
                 <p className="font-semibold">{item.name}</p>

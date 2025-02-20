@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^4.0.0",
+    "archiver": "^7.0.1",
     "bcryptjs": "^3.0.0",
     "formidable": "^3.5.2",
     "formidable-serverless": "^1.1.1",
@@ -28,6 +29,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/archiver": "^6.0.3",
     "@types/formidable": "^3.4.5",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^20",

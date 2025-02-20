@@ -5,6 +5,7 @@ import conn from "./db"
 import { getUser } from "./users"
 import { getFolderPermissions } from "./permissions"
 import { revalidatePath } from "next/cache"
+import path from "path"
 
 export const getFiles = async (folderId: string) => {
     try {
@@ -132,3 +133,63 @@ export const createDirectory = async (folderId: string, name: string) => {
         return {status: 'error', error: "Something went wrong!"} as CreateDirectoryResponse
     }
 }
+
+export const getFolderContents = async (folderId: string, token: string, basePath = "") => {
+    try {
+        if (!token) return 'error';
+
+        // Pobierz user_id na podstawie tokena
+        const queryUser = 'SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()';
+        const resultUser = await (conn as Pool).query(queryUser, [token]);
+
+        if (resultUser.rows.length === 0) return 'error';
+        let user = resultUser.rows[0].user_id;
+
+        // Pobierz nazwę bieżącego folderu (dla struktury ZIP)
+        const queryFolderName = `SELECT name FROM folders WHERE id = $1`;
+        const resultFolderName = await (conn as Pool).query(queryFolderName, [folderId]);
+
+        if (resultFolderName.rows.length === 0) return [];
+        const folderName = resultFolderName.rows[0].name;
+        const folderPath = path.join(basePath, folderName); // Tworzenie ścieżki folderu
+
+        // Pobierz pliki w folderze
+        const queryFiles = `
+            SELECT 
+                f.id, 
+                f.name, 
+                f.path,
+                'file' AS type
+            FROM files f
+            JOIN permissions p ON p.file_id = f.id
+            WHERE f.folder_id = $1
+            AND p.user_id = $2
+            AND p.can_read = TRUE
+        `;
+        const resultFiles = await (conn as Pool).query(queryFiles, [folderId, user]);
+
+        let files = resultFiles.rows.map(file => ({
+            ...file,
+            zipPath: path.join(folderPath, file.name) // Ścieżka w ZIP-ie
+        }));
+
+        // Pobierz podfoldery
+        const queryFolders = `
+            SELECT id FROM folders 
+            WHERE parent_id = $1
+            AND user_id = $2
+        `;
+        const resultFolders = await (conn as Pool).query(queryFolders, [folderId, user]);
+
+        // Pobierz pliki z podfolderów rekurencyjnie
+        for (const subfolder of resultFolders.rows) {
+            const subfolderFiles = await getFolderContents(subfolder.id, token, folderPath);
+            files.push(...subfolderFiles);
+        }
+
+        return files;
+    } catch (error) {
+        console.log(error);
+        return [];
+    }
+};
