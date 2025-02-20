@@ -3,7 +3,6 @@
 import { Pool } from "pg";
 import { UploadedFile } from "./types";
 import conn from "./db";
-import { getUser } from "./users";
 
 export const uploadFiles = async (files: UploadedFile[], folderId: string, token: string) => {
     try {

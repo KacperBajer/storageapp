@@ -18,8 +18,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { id, type } = req.query;
-  if (!id || !type) {
-    return res.status(400).json({ error: "ID and type are required" });
+  if (!type) {
+    return res.status(400).json({ error: "Type is required" });
   }
 
   const cookies = req.headers.cookie || "";
@@ -30,7 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     if (type === "file") {
-      // Pobieranie pojedynczego pliku
+      if (!id) return res.status(400).json({ error: "ID is required" });
+
       const file = await getFile(id as string, token as string);
       if (!file || file.length === 0) {
         return res.status(404).json({ error: "File not found" });
@@ -45,8 +46,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const readStream = fs.createReadStream(file[0].path);
       readStream.pipe(res);
-    } else if (type === "folder") {
-      // Pobranie plików z folderu i podfolderów
+    } 
+    
+    else if (type === "folder") {
+      if (!id) return res.status(400).json({ error: "ID is required" });
+
       const folderContents = await getFolderContents(id as string, token as string);
       if (!folderContents || folderContents.length === 0) {
         return res.status(404).json({ error: "Folder is empty or not found" });
@@ -59,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       archive.pipe(output);
 
       for (const file of folderContents) {
-        archive.file(file.path, { name: file.zipPath }); // Tworzenie folderów w ZIP-ie
+        archive.file(file.path, { name: file.zipPath });
       }
 
       await archive.finalize();
@@ -73,7 +77,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const readStream = fs.createReadStream(zipPath);
         readStream.pipe(res);
       });
-    } else {
+    } 
+    else {
       return res.status(400).json({ error: "Invalid type parameter" });
     }
   } catch (error) {

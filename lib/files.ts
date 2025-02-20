@@ -66,7 +66,7 @@ export const getFolderPath = async (folderId: string) => {
         const query = `SELECT name, parent_id, id FROM folders WHERE id = $1`
         while (currentId !== null) {
             
-            const result = await (conn as Pool).query(query, [currentId]);
+            const result = await (conn as Pool).query(query, [currentId]) as any;
     
             if (result.rows.length === 0) break;
     
@@ -138,22 +138,19 @@ export const getFolderContents = async (folderId: string, token: string, basePat
     try {
         if (!token) return 'error';
 
-        // Pobierz user_id na podstawie tokena
         const queryUser = 'SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()';
         const resultUser = await (conn as Pool).query(queryUser, [token]);
 
         if (resultUser.rows.length === 0) return 'error';
         let user = resultUser.rows[0].user_id;
 
-        // Pobierz nazwę bieżącego folderu (dla struktury ZIP)
         const queryFolderName = `SELECT name FROM folders WHERE id = $1`;
         const resultFolderName = await (conn as Pool).query(queryFolderName, [folderId]);
 
         if (resultFolderName.rows.length === 0) return [];
         const folderName = resultFolderName.rows[0].name;
-        const folderPath = path.join(basePath, folderName); // Tworzenie ścieżki folderu
+        const folderPath = path.join(basePath, folderName); 
 
-        // Pobierz pliki w folderze
         const queryFiles = `
             SELECT 
                 f.id, 
@@ -170,10 +167,9 @@ export const getFolderContents = async (folderId: string, token: string, basePat
 
         let files = resultFiles.rows.map(file => ({
             ...file,
-            zipPath: path.join(folderPath, file.name) // Ścieżka w ZIP-ie
+            zipPath: path.join(folderPath, file.name) 
         }));
 
-        // Pobierz podfoldery
         const queryFolders = `
             SELECT id FROM folders 
             WHERE parent_id = $1
@@ -181,7 +177,6 @@ export const getFolderContents = async (folderId: string, token: string, basePat
         `;
         const resultFolders = await (conn as Pool).query(queryFolders, [folderId, user]);
 
-        // Pobierz pliki z podfolderów rekurencyjnie
         for (const subfolder of resultFolders.rows) {
             const subfolderFiles = await getFolderContents(subfolder.id, token, folderPath);
             files.push(...subfolderFiles);
