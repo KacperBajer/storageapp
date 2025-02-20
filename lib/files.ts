@@ -212,7 +212,7 @@ export const getZips = async (folderId: string) => {
     const user = await getUser();
     if (!user) return [];
 
-    const query = `SELECT z.id, z.created_at, z.folder_id, z.user_id, z.path FROM zips z JOIN permissions p ON p.folder_id = z.folder_id WHERE p.folder_id = $1 AND p.user_id = $2 AND p.can_read = TRUE`;
+    const query = `SELECT z.id, z.created_at, z.folder_id, z.user_id, z.path, z.name FROM zips z JOIN permissions p ON p.folder_id = z.folder_id WHERE p.folder_id = $1 AND p.user_id = $2 AND p.can_read = TRUE ORDER BY z.created_at DESC`;
     const result = await (conn as Pool).query(query, [folderId, user.id]);
 
     return result.rows as Zip[];
@@ -221,9 +221,29 @@ export const getZips = async (folderId: string) => {
     return [];
   }
 };
-type CreateZipResponse =
-  | { status: "error"; error?: string }
-  | { status: "success" };
+
+export const getZip = async (id: string, token: string) => {
+  try {
+    if (!token) return "error";
+
+    const queryUser =
+      "SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()";
+
+    const resultUser = await (conn as Pool).query(queryUser, [token]);
+    if (resultUser.rows.length === 0) return "error";
+    const user = resultUser.rows[0].user_id;
+
+    const query = `SELECT z.id, z.created_at, z.folder_id, z.user_id, z.path, z.name FROM zips z JOIN permissions p ON p.folder_id = z.folder_id WHERE z.id = $1 AND p.user_id = $2 AND p.can_read = TRUE`;
+    const result = await (conn as Pool).query(query, [id, user.id]);
+
+    return result.rows[0] as Zip
+  } catch (error) {
+    console.log(error);
+    return "error";
+  }
+};
+
+type ZipResponse = { status: "error"; error?: string } | { status: "success" };
 export const createZip = async (folderId: string) => {
   try {
     const user = await getUser();
@@ -231,7 +251,7 @@ export const createZip = async (folderId: string) => {
       return {
         status: "error",
         error: "You must be logged in",
-      } as CreateZipResponse;
+      } as ZipResponse;
 
     const queryPermissions = `SELECT *
             FROM folders f
@@ -247,13 +267,14 @@ export const createZip = async (folderId: string) => {
       return {
         status: "error",
         error: "You do not have permissions for this",
-      } as CreateZipResponse;
+      } as ZipResponse;
 
     const folderContents = await getFolderContents(folderId);
-    if (!folderContents || folderContents.length === 0) return  {
+    if (!folderContents || folderContents.length === 0)
+      return {
         status: "error",
         error: "Cannot find folder",
-      } as CreateZipResponse;
+      } as ZipResponse;
 
     const id = uuidv4();
 
@@ -269,19 +290,60 @@ export const createZip = async (folderId: string) => {
 
     await archive.finalize();
 
-    const query = `INSERT INTO zips (path, user_id, folder_id) VALUES ($1, $2, $3)`;
+    const query = `INSERT INTO zips (path, user_id, folder_id, name) VALUES ($1, $2, $3, $4)`;
     const result = await (conn as Pool).query(query, [
       zipPath,
       user.id,
       folderId,
+      `${id}.zip`
     ]);
 
-    return { status: "success" } as CreateZipResponse;
+    return { status: "success" } as ZipResponse;
   } catch (error) {
     console.log(error);
     return {
       status: "error",
       error: "Something went wrong",
-    } as CreateZipResponse;
+    } as ZipResponse;
+  }
+};
+
+export const deleteZip = async (zipId: string) => {
+  try {
+    const user = await getUser();
+    if (!user)
+      return {
+        status: "error",
+        error: "You must be logged in",
+      } as ZipResponse;
+
+    const queryFetch = `SELECT path FROM zips z JOIN permissions p ON p.folder_id = z.folder_id WHERE z.id = $1 AND p.user_id = $2 AND p.can_delete = TRUE`;
+    const resultFetch = await (conn as Pool).query(queryFetch, [
+      zipId,
+      user.id,
+    ]);
+
+    if (resultFetch.rows.length === 0)
+      return {
+        status: "error",
+        error: "Zip file not found or you do not have permission to delete it",
+      } as ZipResponse;
+
+    const zipPath = resultFetch.rows[0].path;
+
+    fs.unlink(zipPath, (err) => {
+      if (err) console.error("Error deleting file:", err);
+    });
+
+    const queryDelete = `DELETE FROM zips WHERE id = $1 AND user_id = $2`;
+    await (conn as Pool).query(queryDelete, [zipId, user.id]);
+
+    return { status: "success" } as ZipResponse;
+  } catch (error) {
+    console.log(error);
+    return {
+      status: "error",
+      error: "Something went wrong",
+    } as ZipResponse;
   }
 };

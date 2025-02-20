@@ -1,4 +1,4 @@
-import { getFile, getFolderContents } from "@/lib/files";
+import { getFile, getFolderContents, getZip } from "@/lib/files";
 import fs from "fs";
 import path from "path";
 import archiver from "archiver";
@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!id) return res.status(400).json({ error: "ID is required" });
 
       const file = await getFile(id as string, token as string);
-      if (!file || file.length === 0) {
+      if (!file || file.length === 0 || file === 'error') {
         return res.status(404).json({ error: "File not found" });
       }
 
@@ -51,7 +51,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     else if (type === "folder") {
       if (!id) return res.status(400).json({ error: "ID is required" });
 
-      const folderContents = await getFolderContents(id as string, token as string);
+      const zip = await getZip(id as string, token as string)
+      if (!zip || zip === 'error') {
+        return res.status(404).json({ error: "File not found" });
+      }
+      const stats = await fsPromises.stat(zip.path);
+      res.writeHead(200, {
+        "Content-Disposition": `attachment; filename="${zip.name}"`,
+        "Content-Type": "application/octet-stream",
+        "Content-Length": stats.size,
+      });
+
+      const readStream = fs.createReadStream(zip.path);
+      readStream.pipe(res);
+      /*const folderContents = await getFolderContents(id as string, token as string);
       if (!folderContents || folderContents.length === 0) {
         return res.status(404).json({ error: "Folder is empty or not found" });
       }
@@ -76,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const readStream = fs.createReadStream(zipPath);
         readStream.pipe(res);
-      });
+      });*/
     } 
     else {
       return res.status(400).json({ error: "Invalid type parameter" });

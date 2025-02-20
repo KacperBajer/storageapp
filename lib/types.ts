@@ -39,4 +39,5 @@ export type Zip = {
     created_at: Date
     user_id: string
     folder_id: string
+    name: string
 }
