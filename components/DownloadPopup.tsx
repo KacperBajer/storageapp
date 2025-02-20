@@ -34,6 +34,15 @@ const DownloadPopup = ({ folder, handleClose }: Props) => {
     getData()
   }
 
+  const download = async (id: string) => {
+    const a = document.createElement("a");
+    a.href = `/api/download?id=${id}&type=folder`;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const create = async () => {
     setIsLoadingCreate(true)
     const res = await createZip(folder.id)
@@ -83,7 +92,7 @@ const DownloadPopup = ({ folder, handleClose }: Props) => {
               className="flex items-center gap-2"
             >
              <p>{formatDate(item.created_at)}</p>
-             <button className="bg-black rounded-md p-2.5">
+             <button onClick={() => download(item.id)} className="bg-black rounded-md p-2.5">
               <FaDownload className="text-green-500" />
              </button>
              <button onClick={() => deleteFunc(item.id)} className="bg-black rounded-md p-2.5">
