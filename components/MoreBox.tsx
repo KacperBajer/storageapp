@@ -7,12 +7,13 @@ import { FaShareAltSquare } from "react-icons/fa";
 import { FaTrash } from "react-icons/fa";
 
 type Props = {
-  position: { top: number; left: number };
-  handleClose: () => void;
+  position: { top: number; left: number }
+  handleClose: () => void
   file: File
+  setShowDownloadPopup: (e: File) => void
 };
 
-const MoreBox = ({ position, handleClose, file }: Props) => {
+const MoreBox = ({ position, handleClose, file, setShowDownloadPopup }: Props) => {
   const boxRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -45,7 +46,14 @@ const MoreBox = ({ position, handleClose, file }: Props) => {
         style={{ top: position.top, left: position.left - 100 }}
         className="absolute p-1 bg-dark-300 rounded-md border-2 flex flex-col gap-0.5 border-dark-200 w-fit text-xs text-gray-200"
       >
-        <button onClick={() => download(file.id, file.type)} className="px-3 py-1.5 w-full text-left hover:cursor-pointer hover:bg-dark-100 rounded-md hover:text-white transition-all duration-200 flex gap-2 items-center">
+        <button onClick={() => {
+            if (file.type === "file") {
+              download(file.id, file.type);
+            } else {
+              setShowDownloadPopup(file);
+              handleClose();
+            }
+          }} className="px-3 py-1.5 w-full text-left hover:cursor-pointer hover:bg-dark-100 rounded-md hover:text-white transition-all duration-200 flex gap-2 items-center">
           <FaDownload className="text-green-500 text-lg" />
           <p>Download</p>
         </button>

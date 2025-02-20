@@ -7,6 +7,7 @@ import { FaFolder } from "react-icons/fa";
 import { IoIosMore } from "react-icons/io";
 import { FaFile } from "react-icons/fa";
 import MoreBox from "./MoreBox";
+import DownloadPopup from "./DownloadPopup";
 
 type Props = {
   files: File[];
@@ -14,14 +15,15 @@ type Props = {
 
 const FilesTable = ({ files }: Props) => {
   const [showMoreBox, setShowMoreBox] = useState<File | null>(null);
+  const [showDownloadPopup, setShowDownloadPopup] = useState<File | null>(null);
   const [moreBoxPosition, setMoreBoxPosition] = useState<{
     top: number;
     left: number;
   } | null>(null);
 
-  const download = async (id: string, type: "file" | "folder") => {
+  const download = async (id: string) => {
     const a = document.createElement("a");
-    a.href = `/api/download?id=${id}&type=${type}`;
+    a.href = `/api/download?id=${id}&type=file`;
     a.download = "";
     document.body.appendChild(a);
     a.click();
@@ -44,8 +46,13 @@ const FilesTable = ({ files }: Props) => {
           file={showMoreBox}
           handleClose={() => setShowMoreBox(null)}
           position={moreBoxPosition as { top: number; left: number }}
+          setShowDownloadPopup={setShowDownloadPopup}
         />
       )}
+      {showDownloadPopup && <DownloadPopup
+        folder={showDownloadPopup}
+        handleClose={() => setShowDownloadPopup(null)}
+      />}
 
       <div className="overflow-auto hideScrollbar">
         <div className="flex flex-col relative max-h-[calc(100vh-180px)] min-w-[600px]">
@@ -95,7 +102,7 @@ const FilesTable = ({ files }: Props) => {
                 </Link>
               ) : (
                 <button
-                  onClick={() => download(item.id, item.type)}
+                  onClick={() => download(item.id)}
                   className="w-[50px] flex flex-1 py-2"
                 >
                   <p className="font-semibold">{item.name}</p>

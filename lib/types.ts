@@ -33,3 +33,10 @@ export type Permissions = {
     can_manage: boolean
     inherit: boolean
 }
+export type Zip = {
+    id: string
+    path: string
+    created_at: Date
+    user_id: string
+    folder_id: string
+}
