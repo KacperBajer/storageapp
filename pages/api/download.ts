@@ -52,7 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!id) return res.status(400).json({ error: "ID is required" });
 
       const zip = await getZip(id as string, token as string)
-      console.log(zip)
       if (!zip || zip === 'error') {
         return res.status(404).json({ error: "File not found" });
       }

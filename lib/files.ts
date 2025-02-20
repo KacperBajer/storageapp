@@ -230,11 +230,13 @@ export const getZip = async (id: string, token: string) => {
       "SELECT user_id FROM sessions WHERE token = $1 AND expires_at > NOW()";
 
     const resultUser = await (conn as Pool).query(queryUser, [token]);
+    console.log(resultUser.rows)
     if (resultUser.rows.length === 0) return "error";
     const user = resultUser.rows[0].user_id;
 
     const query = `SELECT z.id, z.created_at, z.folder_id, z.user_id, z.path, z.name FROM zips z JOIN permissions p ON p.folder_id = z.folder_id WHERE z.id = $1 AND p.user_id = $2 AND p.can_read = TRUE`;
     const result = await (conn as Pool).query(query, [id, user.id]);
+    console.log(result.rows)
 
     return result.rows[0] as Zip
   } catch (error) {
