@@ -63,7 +63,7 @@ const FilesTable = ({ files }: Props) => {
                 )}
               </div>
             </div>
-            {item.type ? (
+            {!item.type ? (
               <Link
                 href={`/folder/${item.id}`}
                 className="w-[50px] flex flex-1 py-2"
