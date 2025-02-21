@@ -5,6 +5,9 @@ export type User = {
     username: string
     avatar: string
 }
+export type UserWithPermissions = {
+    permissions: Permissions
+} & User
 export type Session = {
     id: string
     user_id: number
@@ -24,14 +27,17 @@ export type File = {
     name: string
     parent_id?: string
     created_at: Date
+    user_id: string
     type: 'folder' | 'file'
 }
 export type Permissions = {
+    id: string
     can_read: boolean
     can_write: boolean
     can_delete: boolean
     can_manage: boolean
-    inherit: boolean
+    folder_id?: string
+    file_id?: string 
 }
 export type Zip = {
     id: string

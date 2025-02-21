@@ -21,11 +21,12 @@ export const getFiles = async (folderId: string) => {
                 f.id, 
                 f.name, 
                 f.created_at,
+                f.user_id,
                 'file' AS type,
                 p.can_read, 
                 p.can_write, 
                 p.can_delete,
-                p.inherit
+                p.can_manage
             FROM files f
             JOIN permissions p ON p.file_id = f.id
             WHERE f.folder_id = $1
@@ -38,11 +39,12 @@ export const getFiles = async (folderId: string) => {
                 d.id, 
                 d.name,
                 d.created_at,
+                d.user_id,
                 'folder' AS type,
                 p.can_read, 
                 p.can_write, 
                 p.can_delete,
-                p.inherit
+                p.can_manage
             FROM folders d
             JOIN permissions p ON p.folder_id = d.id
             WHERE d.parent_id = $1
@@ -101,11 +103,11 @@ export const getFile = async (id: string, token: string) => {
                 f.name, 
                 f.created_at,
                 f.path,
+                f.user_id,
                 'file' AS type,
                 p.can_read, 
                 p.can_write, 
-                p.can_delete,
-                p.inherit
+                p.can_delete
             FROM files f
             JOIN permissions p ON p.file_id = f.id
             WHERE f.id = $1

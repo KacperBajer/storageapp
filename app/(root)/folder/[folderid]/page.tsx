@@ -29,7 +29,7 @@ const page = async ({ params }: { params?: Promise<any> }) => {
             {permissions.can_write && <FileUploader folderId={folderid} />}
           </div>
         </div>
-        <FilesTable files={files} folderId={folderid} />
+        <FilesTable user={user} files={files} folderId={folderid} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 "use client";
-import { File, Permissions } from "@/lib/types";
+import { File, Permissions, User } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -11,16 +11,19 @@ import DownloadPopup from "./DownloadPopup";
 import ConfirmAction from "./ConfirmAction";
 import { deleteFile } from "@/lib/files";
 import { toast } from "react-toastify";
+import SharePopup from "./SharePopup";
 
 type Props = {
   files: (File & Permissions)[] ;
   folderId?: string
+  user: User
 };
 
-const FilesTable = ({ files, folderId }: Props) => {
+const FilesTable = ({ files, folderId, user }: Props) => {
   const [showMoreBox, setShowMoreBox] = useState<File & Permissions | null>(null);
   const [showDownloadPopup, setShowDownloadPopup] = useState<File | null>(null);
   const [showConfirmAction, setShowConfirmAction] = useState<boolean | any>(false)
+  const [showSharePopup, setShowSharePopup] = useState<boolean | File>(false)
   const [moreBoxPosition, setMoreBoxPosition] = useState<{
     top: number;
     left: number;
@@ -61,6 +64,7 @@ const FilesTable = ({ files, folderId }: Props) => {
           handleClose={() => setShowMoreBox(null)}
           position={moreBoxPosition as { top: number; left: number }}
           setShowDownloadPopup={setShowDownloadPopup}
+          setShowSharePopup={setShowSharePopup}
           setShowConfirmAction={setShowConfirmAction}
         />
       )}
@@ -68,6 +72,7 @@ const FilesTable = ({ files, folderId }: Props) => {
         folder={showDownloadPopup}
         handleClose={() => setShowDownloadPopup(null)}
       />}
+      {showSharePopup && <SharePopup user={user} handleClose={() => setShowSharePopup(false)} file={showSharePopup as File} />}
       {showConfirmAction && <ConfirmAction name={showConfirmAction.action} handleClose={() => setShowConfirmAction(false)} action={() => deleteFunc(showConfirmAction.file.id, showConfirmAction.file.type)} />}
 
       <div className="overflow-auto hideScrollbar">

@@ -5,13 +5,13 @@ import { File, Permissions } from "@/lib/types";
 import { FaShareAltSquare } from "react-icons/fa";
 import { FaTrash } from "react-icons/fa";
 
-
 type Props = {
   position: { top: number; left: number };
   handleClose: () => void;
   file: File & Permissions;
   setShowDownloadPopup: (e: File) => void;
   setShowConfirmAction: (e: any) => void
+  setShowSharePopup: (e: File) => void
 };
 
 const MoreBox = ({
@@ -20,6 +20,7 @@ const MoreBox = ({
   file,
   setShowDownloadPopup,
   setShowConfirmAction,
+  setShowSharePopup,
 }: Props) => {
   const boxRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -67,10 +68,13 @@ const MoreBox = ({
             <FaDownload className="text-green-500 text-lg" />
             <p>Download</p>
           </button>
-          <button className="px-3 py-1.5 w-full text-left hover:cursor-pointer hover:bg-dark-100 rounded-md hover:text-white transition-all duration-200 flex gap-2 items-center">
+          {file.can_manage && <button onClick={() => {
+            setShowSharePopup(file)
+            handleClose()
+          }} className="px-3 py-1.5 w-full text-left hover:cursor-pointer hover:bg-dark-100 rounded-md hover:text-white transition-all duration-200 flex gap-2 items-center">
             <FaShareAltSquare className="text-violet-600 text-lg" />
             <p>Share</p>
-          </button>
+          </button>}
          {file.can_delete && <button onClick={() => {
             setShowConfirmAction({action: 'delete', file: file})
             handleClose()
