@@ -1,5 +1,5 @@
 "use client";
-import { File } from "@/lib/types";
+import { File, Permissions } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -13,12 +13,12 @@ import { deleteFile } from "@/lib/files";
 import { toast } from "react-toastify";
 
 type Props = {
-  files: File[];
+  files: (File & Permissions)[] ;
   folderId?: string
 };
 
 const FilesTable = ({ files, folderId }: Props) => {
-  const [showMoreBox, setShowMoreBox] = useState<File | null>(null);
+  const [showMoreBox, setShowMoreBox] = useState<File & Permissions | null>(null);
   const [showDownloadPopup, setShowDownloadPopup] = useState<File | null>(null);
   const [showConfirmAction, setShowConfirmAction] = useState<boolean | any>(false)
   const [moreBoxPosition, setMoreBoxPosition] = useState<{
@@ -35,7 +35,7 @@ const FilesTable = ({ files, folderId }: Props) => {
     document.body.removeChild(a);
   };
 
-  const handleMoreClick = (event: React.MouseEvent, file: File) => {
+  const handleMoreClick = (event: React.MouseEvent, file: File & Permissions) => {
     const buttonRect = (event.target as HTMLElement).getBoundingClientRect();
     setShowMoreBox(file);
     setMoreBoxPosition({  

@@ -1,16 +1,15 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { FaDownload } from "react-icons/fa6";
-import { File } from "@/lib/types";
+import { File, Permissions } from "@/lib/types";
 import { FaShareAltSquare } from "react-icons/fa";
 import { FaTrash } from "react-icons/fa";
-import { deleteFile } from "@/lib/files";
-import { toast } from "react-toastify";
+
 
 type Props = {
   position: { top: number; left: number };
   handleClose: () => void;
-  file: File;
+  file: File & Permissions;
   setShowDownloadPopup: (e: File) => void;
   setShowConfirmAction: (e: any) => void
 };
@@ -72,13 +71,13 @@ const MoreBox = ({
             <FaShareAltSquare className="text-violet-600 text-lg" />
             <p>Share</p>
           </button>
-          <button onClick={() => {
+         {file.can_delete && <button onClick={() => {
             setShowConfirmAction({action: 'delete', file: file})
             handleClose()
           }} className="px-3 py-1.5 w-full text-left hover:cursor-pointer hover:bg-dark-100 rounded-md hover:text-white transition-all duration-200 flex gap-2 items-center">
             <FaTrash className="text-red-600 text-lg" />
             <p>Delete</p>
-          </button>
+          </button>}
         </div>
       </div>
     </>
