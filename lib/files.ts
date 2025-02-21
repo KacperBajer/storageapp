@@ -401,7 +401,7 @@ WHERE id IN (
 `;
       await (conn as Pool).query(deleteFilesQuery, [id, user.id]);
 
-      const subfoldersQuery = `SELECT id FROM folders f JOIN permissions p ON p.folder_id = f.id WHERE f.parent_id = $1 AND p.user_id = $2 AND p.can_delete = TRUE`;
+      const subfoldersQuery = `SELECT f.id FROM folders f JOIN permissions p ON p.folder_id = f.id WHERE f.parent_id = $1 AND p.user_id = $2 AND p.can_delete = TRUE`;
       const subfoldersResult = await (conn as Pool).query(subfoldersQuery, [
         id,
         user.id,
