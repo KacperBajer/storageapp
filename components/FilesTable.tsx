@@ -14,9 +14,10 @@ import { toast } from "react-toastify";
 
 type Props = {
   files: File[];
+  folderId?: string
 };
 
-const FilesTable = ({ files }: Props) => {
+const FilesTable = ({ files, folderId }: Props) => {
   const [showMoreBox, setShowMoreBox] = useState<File | null>(null);
   const [showDownloadPopup, setShowDownloadPopup] = useState<File | null>(null);
   const [showConfirmAction, setShowConfirmAction] = useState<boolean | any>(false)
@@ -44,7 +45,7 @@ const FilesTable = ({ files }: Props) => {
   };
 
   const deleteFunc = async (id: string, type: "file" | "folder") => {
-      const res = await deleteFile(id, type);
+      const res = await deleteFile(id, type, folderId);
       if (res.status === "error") {
         toast.error(res.error || "Something went wrong");
         return;

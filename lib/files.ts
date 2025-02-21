@@ -351,7 +351,7 @@ export const deleteZip = async (zipId: string) => {
 type DeleteResponse =
   | { status: "error"; error?: string }
   | { status: "success" };
-export const deleteFile = async (id: string, type: "folder" | "file") => {
+export const deleteFile = async (id: string, type: "folder" | "file", folderId?: string) => {
   try {
     const user = await getUser();
     if (!user)
@@ -378,6 +378,7 @@ export const deleteFile = async (id: string, type: "folder" | "file") => {
       const queryDelete = `DELETE FROM files WHERE id = $1`;
       await (conn as Pool).query(queryDelete, [id]);
 
+      revalidatePath(`/folder/${folderId}`)
       return { status: "success" } as DeleteResponse;
     }
 
@@ -420,6 +421,7 @@ WHERE id IN (
 );`;
       await (conn as Pool).query(deleteFolderQuery, [id, user.id]);
 
+      revalidatePath(`/folder/${id}`)
       return { status: "success" } as DeleteResponse;
     }
     return {
