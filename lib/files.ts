@@ -236,7 +236,7 @@ export const getZip = async (id: string, token: string) => {
     const query = `SELECT z.id, z.created_at, z.folder_id, z.user_id, z.path, z.name FROM zips z JOIN permissions p ON p.folder_id = z.folder_id WHERE z.id = $1 AND p.user_id = $2 AND p.can_read = TRUE`;
     const result = await (conn as Pool).query(query, [id, user]);
 
-    return result.rows[0] as Zip
+    return result.rows[0] as Zip;
   } catch (error) {
     console.log(error);
     return "error";
@@ -295,7 +295,7 @@ export const createZip = async (folderId: string) => {
       zipPath,
       user.id,
       folderId,
-      `${id}.zip`
+      `${id}.zip`,
     ]);
 
     return { status: "success" } as ZipResponse;
@@ -335,8 +335,8 @@ export const deleteZip = async (zipId: string) => {
       if (err) console.error("Error deleting file:", err);
     });
 
-    const queryDelete = `DELETE FROM zips WHERE id = $1 AND user_id = $2`;
-    await (conn as Pool).query(queryDelete, [zipId, user.id]);
+    const queryDelete = `DELETE FROM zips WHERE id = $1`;
+    await (conn as Pool).query(queryDelete, [zipId]);
 
     return { status: "success" } as ZipResponse;
   } catch (error) {
@@ -345,5 +345,92 @@ export const deleteZip = async (zipId: string) => {
       status: "error",
       error: "Something went wrong",
     } as ZipResponse;
+  }
+};
+
+type DeleteResponse =
+  | { status: "error"; error?: string }
+  | { status: "success" };
+export const deleteFile = async (id: string, type: "folder" | "file") => {
+  try {
+    const user = await getUser();
+    if (!user)
+      return {
+        status: "error",
+        error: "You must be logged in",
+      } as DeleteResponse;
+
+    if (type === "file") {
+      const queryFetch = `SELECT f.path FROM files f JOIN permissions p ON p.file_id = f.id WHERE f.id = $1 AND p.user_id = $2 AND p.can_delete = TRUE`;
+      const resultFetch = await (conn as Pool).query(queryFetch, [id, user.id]);
+
+      if (resultFetch.rows.length === 0)
+        return {
+          status: "error",
+          error: "File not found or you do not have permission to delete it",
+        } as DeleteResponse;
+      const path = resultFetch.rows[0].path;
+
+      fs.unlink(path, (err) => {
+        if (err) console.error("Error deleting file:", err);
+      });
+
+      const queryDelete = `DELETE FROM files WHERE id = $1`;
+      await (conn as Pool).query(queryDelete, [id]);
+
+      return { status: "success" } as DeleteResponse;
+    }
+
+    if (type === "folder") {
+      const filesQuery = `SELECT f.id, f.path FROM files f JOIN permissions p ON p.file_id = f.id WHERE f.folder_id = $1 AND p.user_id = $2 AND p.can_delete = TRUE`;
+      const filesResult = await (conn as Pool).query(filesQuery, [id, user.id]);
+
+      for (const file of filesResult.rows) {
+        fs.unlink(file.path, (err) => {
+          if (err) console.error("Error deleting file:", err);
+        });
+      }
+
+      const deleteFilesQuery = `DELETE FROM files 
+WHERE id IN (
+    SELECT f.id 
+    FROM files f
+    JOIN permissions p ON p.file_id = f.id
+    WHERE f.folder_id = $1 AND p.user_id = $2 AND p.can_delete = TRUE
+);
+`;
+      await (conn as Pool).query(deleteFilesQuery, [id, user.id]);
+
+      const subfoldersQuery = `SELECT id FROM folders f JOIN permissions p ON p.folder_id = f.id WHERE f.parent_id = $1 AND p.user_id = $2 AND p.can_delete = TRUE`;
+      const subfoldersResult = await (conn as Pool).query(subfoldersQuery, [
+        id,
+        user.id,
+      ]);
+
+      for (const subfolder of subfoldersResult.rows) {
+        await deleteFile(subfolder.id, "folder");
+      }
+
+      const deleteFolderQuery = `DELETE FROM folders 
+WHERE id IN (
+    SELECT f.id 
+    FROM folders f
+    JOIN permissions p ON p.folder_id = f.id
+    WHERE f.id = $1 AND p.user_id = $2 AND p.can_delete = TRUE
+);`;
+      await (conn as Pool).query(deleteFolderQuery, [id, user.id]);
+
+      return { status: "success" } as DeleteResponse;
+    }
+    return {
+      status: "error",
+      error: "Invalid type of file",
+    } as DeleteResponse;
+  } catch (error) {
+    console.log(error);
+    return {
+      status: "error",
+      error: "Something went wrong",
+    } as DeleteResponse;
   }
 };

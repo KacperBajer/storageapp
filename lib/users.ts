@@ -82,3 +82,19 @@ export const createUser = async (email: string, username: string, password: stri
         return {status: 'error', error: 'Something went wrong'} as AuthUserResponse
     }
 }
+export const checkPassword = async (password: string) => {
+    try {
+        if(!password) return false
+        const user = await getUser()
+        if(!user) return false
+        const query = `SELECT * FROM users WHERE id = $1`
+        const result = await (conn as Pool).query(query, [user.id])
+        if(result.rows.length === 0) return false
+        const passMatch = await bcrypt.compare(password, result.rows[0].password_hash); 
+        if(!passMatch) return false
+        return true
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}

@@ -8,6 +8,9 @@ import { IoIosMore } from "react-icons/io";
 import { FaFile } from "react-icons/fa";
 import MoreBox from "./MoreBox";
 import DownloadPopup from "./DownloadPopup";
+import ConfirmAction from "./ConfirmAction";
+import { deleteFile } from "@/lib/files";
+import { toast } from "react-toastify";
 
 type Props = {
   files: File[];
@@ -16,6 +19,7 @@ type Props = {
 const FilesTable = ({ files }: Props) => {
   const [showMoreBox, setShowMoreBox] = useState<File | null>(null);
   const [showDownloadPopup, setShowDownloadPopup] = useState<File | null>(null);
+  const [showConfirmAction, setShowConfirmAction] = useState<boolean | any>(false)
   const [moreBoxPosition, setMoreBoxPosition] = useState<{
     top: number;
     left: number;
@@ -39,6 +43,15 @@ const FilesTable = ({ files }: Props) => {
     });
   };
 
+  const deleteFunc = async (id: string, type: "file" | "folder") => {
+      const res = await deleteFile(id, type);
+      if (res.status === "error") {
+        toast.error(res.error || "Something went wrong");
+        return;
+      }
+      toast.success("Deleted");
+    };
+
   return (
     <>
       {showMoreBox && (
@@ -47,12 +60,14 @@ const FilesTable = ({ files }: Props) => {
           handleClose={() => setShowMoreBox(null)}
           position={moreBoxPosition as { top: number; left: number }}
           setShowDownloadPopup={setShowDownloadPopup}
+          setShowConfirmAction={setShowConfirmAction}
         />
       )}
       {showDownloadPopup && <DownloadPopup
         folder={showDownloadPopup}
         handleClose={() => setShowDownloadPopup(null)}
       />}
+      {showConfirmAction && <ConfirmAction name={showConfirmAction.action} handleClose={() => setShowConfirmAction(false)} action={() => deleteFunc(showConfirmAction.file.id, showConfirmAction.file.type)} />}
 
       <div className="overflow-auto hideScrollbar">
         <div className="flex flex-col relative max-h-[calc(100vh-180px)] min-w-[600px]">
