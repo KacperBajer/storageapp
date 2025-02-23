@@ -3,10 +3,15 @@ import Image from 'next/image'
 import React, { useState } from 'react'
 import { FaTrash } from 'react-icons/fa6'
 import ToggleButton from './ToggleButton'
+import { FaSave } from "react-icons/fa";
+import { changePermissions, removePermissions } from '@/lib/permissions'
+import { toast } from 'react-toastify'
+import { FaCrown } from "react-icons/fa6";
 
 type Props = {
     shares: UserWithPermissions[]
     file: File
+    getData: () => void
 }
 
 type PermissionsState = {
@@ -20,13 +25,12 @@ type UserPermissionsState = {
     [key: string]: PermissionsState
 };
 
-const UserSharesTable = ({ shares, file }: Props) => {
+const UserSharesTable = ({ shares, file, getData }: Props) => {
 
-    console.log(shares)
 
     const [permissionsState, setPermissionsState] = useState<UserPermissionsState>(() => {
         return shares.reduce((acc, user) => {
-            acc[user.email] = {
+            acc[user.id] = {
                 can_read: user.permissions?.can_read || false,
                 can_write: user.permissions?.can_write || false,
                 can_delete: user.permissions?.can_delete || false,
@@ -36,14 +40,59 @@ const UserSharesTable = ({ shares, file }: Props) => {
         }, {} as UserPermissionsState);
     });
 
-    const togglePermission = (email: string, permission: keyof PermissionsState) => {
-        setPermissionsState((prev) => ({
-            ...prev,
-            [email]: {
-                ...prev[email],
-                [permission]: !prev[email][permission],
-            },
-        }));
+    const savePermissions = async (id: string) => {
+        const userPermissions = permissionsState[id];
+        const save = await changePermissions(id, file.type, file.id, userPermissions.can_read, userPermissions.can_write, userPermissions.can_delete, userPermissions.can_manage)
+        if(save.status === 'error') {
+            toast.error(save.error || 'Something went wrong')
+            return
+        }
+        toast.success('Saved')
+    }
+
+    const deletePermissionsForUser = async (id: string) => {
+        const res = await removePermissions(id, file.type, file.id)
+        if(res.status === 'error') {
+            toast.error(res.error || 'Something went wrong')
+            return
+        }
+        toast.success('Removed')
+        getData()
+    }
+
+    const togglePermission = (id: string, permission: keyof PermissionsState) => {
+        setPermissionsState((prev) => {
+            const updatedPermissions = {
+                ...prev[id],
+                [permission]: !prev[id][permission],
+            };
+    
+            if (permission === "can_write" && updatedPermissions.can_write) {
+                updatedPermissions.can_read = true;
+            }
+
+            if (permission === "can_delete" && updatedPermissions.can_delete) {
+                updatedPermissions.can_read = true;
+            }
+
+            if (permission === "can_manage" && updatedPermissions.can_manage) {
+                updatedPermissions.can_read = true;
+                updatedPermissions.can_delete = true;
+                updatedPermissions.can_write = true;
+            }
+
+            if (permission === "can_read" && !updatedPermissions.can_read) {
+                updatedPermissions.can_write = false;
+                updatedPermissions.can_delete = false;
+                updatedPermissions.can_write = false;
+                updatedPermissions.can_manage = false;
+            }
+    
+            return {
+                ...prev,
+                [id]: updatedPermissions,
+            };
+        });
     };
 
     return (
@@ -73,6 +122,11 @@ const UserSharesTable = ({ shares, file }: Props) => {
                             <FaTrash className='text-red-500' />
                         </div>
                     </div>
+                    <div className="w-[50px] flex justify-center">
+                        <div className="p-2.5 rounded-md bg-black/60">
+                            <FaSave className='text-blue-600' />
+                        </div>
+                    </div>
                 </section>
                 {shares?.map((item, index) => (
                     <div
@@ -80,50 +134,56 @@ const UserSharesTable = ({ shares, file }: Props) => {
                         className={`flex ${shares.length !== index + 1 && "border-b border-dark-200"
                             } items-center`}
                     >
-                        <div className="w-[200px] flex items-center pl-5 gap-2 py-2 flex-1">
+                        <div className="w-[200px] flex items-center pl-5 py-2 flex-1">
                             <Image
                                 alt=''
                                 src={item.avatar}
                                 width={24}
                                 height={24}
-                                className='w-6 h-6 rounded-full'
+                                className='w-6 h-6 rounded-full mr-2'
                             />
-                            <p>{item.username}</p>
+                            {file.user_id === item.id && <FaCrown className='text-yellow-500 mr-1' />}
+                            <p className={`${file.user_id === item.id && 'text-yellow-500'}`}>{item.username}</p>
                         </div>
                         <div className="w-[300px] flex py-3">
                             <p>{item.email}</p>
                         </div>
                         <div className="w-[70px] flex justify-center py-2">
                             <ToggleButton
-                                isActive={permissionsState[item.email].can_read}
-                                onToggle={() => togglePermission(item.email, 'can_read')}
+                                isActive={permissionsState[item.id].can_read}
+                                onToggle={() => togglePermission(item.id, 'can_read')}
                                 isDisabled={file.user_id === item.id}
                             />
                         </div>
                         <div className="w-[70px] flex justify-center py-2">
                             <ToggleButton
-                                isActive={permissionsState[item.email].can_write}
-                                onToggle={() => togglePermission(item.email, 'can_write')}
+                                isActive={permissionsState[item.id].can_write}
+                                onToggle={() => togglePermission(item.id, 'can_write')}
                                 isDisabled={file.user_id === item.id}
                             />
                         </div>
                         <div className="w-[70px] flex justify-center py-2">
                             <ToggleButton
-                                isActive={permissionsState[item.email].can_delete}
-                                onToggle={() => togglePermission(item.email, 'can_delete')}
+                                isActive={permissionsState[item.id].can_delete}
+                                onToggle={() => togglePermission(item.id, 'can_delete')}
                                 isDisabled={file.user_id === item.id}
                             />
                         </div>
                         <div className="w-[70px] flex justify-center py-2">
                             <ToggleButton
-                                isActive={permissionsState[item.email].can_manage}
-                                onToggle={() => togglePermission(item.email, 'can_manage')}
+                                isActive={permissionsState[item.id].can_manage}
+                                onToggle={() => togglePermission(item.id, 'can_manage')}
                                 isDisabled={file.user_id === item.id}
                             />
                         </div>
                         <div className="w-[50px] flex justify-center">
-                            <button disabled={file.user_id === item.id} className="p-2.5 rounded-md bg-black/60">
+                            <button onClick={() => deletePermissionsForUser(item.id)} disabled={file.user_id === item.id} className="p-2.5 rounded-md bg-black/60">
                                 <FaTrash className='text-red-500' />
+                            </button>
+                        </div>
+                        <div className="w-[50px] flex justify-center">
+                            <button onClick={() => savePermissions(item.id)} disabled={file.user_id === item.id} className="p-2.5 rounded-md bg-black/60">
+                                <FaSave className='text-blue-600' />
                             </button>
                         </div>
                     </div>

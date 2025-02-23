@@ -46,6 +46,7 @@ const SharePopup = ({ handleClose, file, user }: Props) => {
             return
         }
         toast.success('User added')
+        getData()
     }
 
     useEffect(() => {
@@ -77,7 +78,7 @@ const SharePopup = ({ handleClose, file, user }: Props) => {
                 ref={boxRef}
             >
                 <p className="text-3xl font-semibold text-center mb-5">Share</p>
-                <UserSharesTable file={file} shares={data} />
+                <UserSharesTable file={file} shares={data} getData={getData} />
                 <div className='gap-2 flex mt-3 w-full'>
                     <form onSubmit={addUser} className='flex gap-2'>
                         <input value={email} onChange={(e) => setEmail(e.target.value)} className='appearance-none outline-none rounded-md border border-dark-200 py-1.5 px-4 bg-transparent' placeholder='Email' type='email' />
