@@ -16,6 +16,9 @@ export const uploadFiles = async (files: UploadedFile[], folderId: string, token
 
         let createdFirstFolders = []
 
+        const ownerQuery = `SELECT * FROM folders WHERE id = $1`
+        const onwerResult = await (conn as Pool).query(ownerQuery, [folderId])
+
         for (const file of files) {
             const { savedPath, uniqueName, name, path } = file;
             let parentFolder = folderId;
@@ -25,7 +28,7 @@ export const uploadFiles = async (files: UploadedFile[], folderId: string, token
             
             if(fileFolderPath[0] === '.' || fileFolderPath.length === 0) {
                 const query = 'INSERT INTO files (name, path, folder_id, user_id) VALUES ($1, $2, $3, $4)'
-                const result = await (conn as Pool).query(query, [file.name, file.savedPath, folderId, user])
+                const result = await (conn as Pool).query(query, [file.name, file.savedPath, folderId, onwerResult.rows[0].user_id])
                 continue
             }
 
@@ -36,7 +39,7 @@ export const uploadFiles = async (files: UploadedFile[], folderId: string, token
                 parentFolder = firstFolder.id
             } else {
                 const queryFirstFolder = 'INSERT INTO folders (name, parent_id, user_id) VALUES ($1, $2, $3) RETURNING *'
-                const firstFolderResult = await (conn as Pool).query(queryFirstFolder, [fileFolderPath[0], parentFolder, user])
+                const firstFolderResult = await (conn as Pool).query(queryFirstFolder, [fileFolderPath[0], parentFolder, onwerResult.rows[0].user_id])
                 parentFolder = firstFolderResult.rows[0].id
                 createdFirstFolders.push({name: fileFolderPath[0], id: firstFolderResult.rows[0].id})
             }
@@ -52,13 +55,13 @@ export const uploadFiles = async (files: UploadedFile[], folderId: string, token
                     parentFolder = checkResult.rows[0].id
                 } else {
                     const insertQuery = 'INSERT INTO folders (name, parent_id, user_id) VALUES ($1, $2, $3) RETURNING id'
-                    const insertResult = await (conn as Pool).query(insertQuery, [folder, parentFolder, user])
+                    const insertResult = await (conn as Pool).query(insertQuery, [folder, parentFolder, onwerResult.rows[0].user_id])
                     parentFolder = insertResult.rows[0].id
                 }
             }
 
             const query = 'INSERT INTO files (name, path, folder_id, user_id) VALUES ($1, $2, $3, $4)'
-            const result = await (conn as Pool).query(query, [file.name, file.savedPath, parentFolder, user])
+            const result = await (conn as Pool).query(query, [file.name, file.savedPath, parentFolder, onwerResult.rows[0].user_id])
         }
 
         return 'success'

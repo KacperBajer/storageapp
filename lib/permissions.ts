@@ -1,10 +1,10 @@
-'use server'
+"use server";
 
-import { Pool } from "pg"
-import conn from "./db"
-import { Permissions } from "./types"
-import { getUser } from "./users"
-import { v4 as uuidv4 } from 'uuid';
+import { Pool } from "pg";
+import conn from "./db";
+import { Permissions } from "./types";
+import { getUser } from "./users";
+import { v4 as uuidv4 } from "uuid";
 
 export const getFolderPermissions = async (id: string) => {
   try {
@@ -18,7 +18,7 @@ export const getFolderPermissions = async (id: string) => {
       } as Permissions;
     }
 
-    const folderQuery = 'SELECT user_id, parent_id FROM folders WHERE id = $1';
+    const folderQuery = "SELECT user_id, parent_id FROM folders WHERE id = $1";
     const folderResult = await (conn as Pool).query(folderQuery, [id]);
 
     if (folderResult.rows.length === 0) {
@@ -34,7 +34,8 @@ export const getFolderPermissions = async (id: string) => {
     const isRootFolder = folderResult.rows[0].parent_id === null;
     const isUserOwner = folderOwnerId === user.id;
 
-    const query = 'SELECT * FROM permissions WHERE folder_id = $1 AND user_id = $2';
+    const query =
+      "SELECT * FROM permissions WHERE folder_id = $1 AND user_id = $2";
     const result = await (conn as Pool).query(query, [id, user.id]);
 
     if (result.rows.length > 0) {
@@ -92,14 +93,17 @@ export const getFolderPermissions = async (id: string) => {
   }
 };
 
-export const getShares = async (id: string, type: 'folder' | 'file') => {
+export const getShares = async (id: string, type: "folder" | "file") => {
   try {
-    const user = await getUser()
-    if (!user) return []
-    if (type === 'file') {
-      const checkUserPermissions = `SELECT * FROM files f JOIN permissions p ON p.file_id = f.id WHERE f.id = $1 AND p.user_id = $2 AND can_manage = TRUE`
-      const resultCheckUserPermissions = await (conn as Pool).query(checkUserPermissions, [id, user.id])
-      if (resultCheckUserPermissions.rows.length === 0) return []
+    const user = await getUser();
+    if (!user) return [];
+    if (type === "file") {
+      const checkUserPermissions = `SELECT * FROM files f JOIN permissions p ON p.file_id = f.id WHERE f.id = $1 AND p.user_id = $2 AND can_manage = TRUE`;
+      const resultCheckUserPermissions = await (conn as Pool).query(
+        checkUserPermissions,
+        [id, user.id]
+      );
+      if (resultCheckUserPermissions.rows.length === 0) return [];
       const query = `SELECT 
   u.id, 
   u.email, 
@@ -115,14 +119,17 @@ export const getShares = async (id: string, type: 'folder' | 'file') => {
   ) AS permissions
 FROM permissions p 
 JOIN users u ON u.id = p.user_id 
-WHERE p.file_id = $1;`
-      const result = await (conn as Pool).query(query, [id])
-      return result.rows
+WHERE p.file_id = $1;`;
+      const result = await (conn as Pool).query(query, [id]);
+      return result.rows;
     }
-    if (type === 'folder') {
-      const checkUserPermissions = `SELECT * FROM folders f JOIN permissions p ON p.folder_id = f.id WHERE f.id = $1 AND p.user_id = $2 AND can_manage = TRUE`
-      const resultCheckUserPermissions = await (conn as Pool).query(checkUserPermissions, [id, user.id])
-      if (resultCheckUserPermissions.rows.length === 0) return []
+    if (type === "folder") {
+      const checkUserPermissions = `SELECT * FROM folders f JOIN permissions p ON p.folder_id = f.id WHERE f.id = $1 AND p.user_id = $2 AND can_manage = TRUE`;
+      const resultCheckUserPermissions = await (conn as Pool).query(
+        checkUserPermissions,
+        [id, user.id]
+      );
+      if (resultCheckUserPermissions.rows.length === 0) return [];
       const query = `SELECT 
   u.id, 
   u.email, 
@@ -138,85 +145,192 @@ WHERE p.file_id = $1;`
   ) AS permissions
 FROM permissions p 
 JOIN users u ON u.id = p.user_id 
-WHERE p.folder_id = $1;`
-      const result = await (conn as Pool).query(query, [id])
-      return result.rows
+WHERE p.folder_id = $1;`;
+      const result = await (conn as Pool).query(query, [id]);
+      return result.rows;
     }
-    return []
+    return [];
   } catch (error) {
-    console.log(error)
-    return []
+    console.log(error);
+    return [];
   }
-}
+};
 
-export const generateLink = async (type: 'download' | 'share', fileType: 'folder' | 'file', fileId: string, userId: string) => {
+export const generateLink = async (
+  type: "download" | "share",
+  fileType: "folder" | "file",
+  fileId: string,
+  userId: string
+) => {
   try {
-    if (fileType === 'file') {
-      const query = `INSERT INTO links (type, file_id, user_id) VALUES ($1, $2, $3) RETURNING id`
-      const result = await (conn as Pool).query(query, [type, fileId, userId])
-      if (result.rows.length === 0) return { status: 'error', error: 'Something went wrong' }
-      const link = `http://78.31.151.253:2999/sharelink/${result.rows[0].id}`
-      return { status: 'success', link: link }
+    if (fileType === "file") {
+      const query = `INSERT INTO links (type, file_id, user_id) VALUES ($1, $2, $3) RETURNING id`;
+      const result = await (conn as Pool).query(query, [type, fileId, userId]);
+      if (result.rows.length === 0)
+        return { status: "error", error: "Something went wrong" };
+      const link = `http://78.31.151.253:2999/sharelink/${result.rows[0].id}`;
+      return { status: "success", link: link };
     }
-    if (fileType === 'folder') {
-      const query = `INSERT INTO links (type, folder_id, user_id) VALUES ($1, $2, $3) RETURNING id`
-      const result = await (conn as Pool).query(query, [type, fileId, userId])
-      if (result.rows.length === 0) return { status: 'error', error: 'Something went wrong' }
-      const link = `http://78.31.151.253:2999/sharelink/${result.rows[0].id}`
-      return { status: 'success', link: link }
+    if (fileType === "folder") {
+      const query = `INSERT INTO links (type, folder_id, user_id) VALUES ($1, $2, $3) RETURNING id`;
+      const result = await (conn as Pool).query(query, [type, fileId, userId]);
+      if (result.rows.length === 0)
+        return { status: "error", error: "Something went wrong" };
+      const link = `http://78.31.151.253:2999/sharelink/${result.rows[0].id}`;
+      return { status: "success", link: link };
     }
-    return { status: 'error', error: 'Invalid type' }
+    return { status: "error", error: "Invalid type" };
   } catch (error) {
-    return { status: 'error', error: 'Something went wrong' }
+    return { status: "error", error: "Something went wrong" };
   }
-}
-
-export const addUserToShare = async (type: 'file' | 'folder', id: string, email: string) => {
+};
+export const addUserToShare = async (
+  type: "file" | "folder",
+  id: string,
+  email: string
+) => {
   try {
     const user = await getUser();
     if (!user) {
       return { status: "error", error: "You must be logged in" };
     }
 
+    const sharingUserQuery = `SELECT * FROM users WHERE email = $1`;
+    const sharingUserResult = await (conn as Pool).query(sharingUserQuery, [
+      email,
+    ]);
 
-    const sharingUserQuery = `SELECT * FROM USERS WHERE email = $1`
-    const sharingUserResult = await (conn as Pool).query(sharingUserQuery, [email])
+    if (sharingUserResult.rows.length === 0)
+      return { status: "error", error: "Cannot find user" };
 
-    if (sharingUserResult.rows.length === 0) return { status: 'error', error: "Cannot find user" }
-
-    const userId = sharingUserResult.rows[0].id
+    const userId = sharingUserResult.rows[0].id;
 
     if (type === "file") {
+      const checkPermissions = `SELECT * FROM permissions WHERE file_id = $1 AND user_id = $2 AND can_manage = TRUE`;
+      const checkPermissionsResult = await (conn as Pool).query(
+        checkPermissions,
+        [id, user.id]
+      );
+      if (checkPermissionsResult.rows.length === 0)
+        return { status: "error", error: "You do not have permissions" };
 
-      const checkPermissions = `SELECT * FROM permissions WHERE file_id = $1 AND user_id = $2 AND can_manage = TRUE`
-      const checkPermissionsResult = await (conn as Pool).query(checkPermissions, [id, user.id])
-      if(checkPermissionsResult.rows.length === 0) return { status: "error", error: "You do not have permissions" };
+        const query = `SELECT * FROM files WHERE id = $1`
+        const result = await (conn as Pool).query(query, [id])
 
-      const query = `INSERT INTO permissions (user_id, file_id, can_read, can_write, can_delete, can_manage) VALUES ($1, $2, TRUE, FALSE, FALSE, FALSE)`;
-      await (conn as Pool).query(query, [userId, id]);
+      const parentFolderQuery = `
+  WITH RECURSIVE parent_folders AS (
+    SELECT id, parent_id FROM folders WHERE id = $1
+    UNION ALL
+    SELECT f.id, f.parent_id FROM folders f
+    INNER JOIN parent_folders pf ON f.id = pf.parent_id
+) 
+SELECT 1 FROM parent_folders pf 
+WHERE EXISTS (SELECT 1 FROM share WHERE folder_id = pf.id AND user_id = $2);
+`;
+      const parentFolderResult = await (conn as Pool).query(parentFolderQuery, [
+        result.rows[0].folder_id,
+        userId,
+      ]);
+
+      if (parentFolderResult.rows.length === 0) {
+        const query = `SELECT * FROM files WHERE id = $1`;
+        const result = await (conn as Pool).query(query, [id]);
+        await (conn as Pool).query(
+          `INSERT INTO share (user_id, file_id, owner_id) VALUES ($1, $2, $3)`,
+          [userId, id, result.rows[0].user_id]
+        );
+      }
+
+      const insertPermissions = async (fileId: string) => {
+        const permissionsQuery = `
+          INSERT INTO permissions (user_id, file_id, can_read, can_write, can_delete, can_manage)
+          VALUES ($1, $2, TRUE, FALSE, FALSE, FALSE)`;
+        await (conn as Pool).query(permissionsQuery, [userId, fileId]);
+      };
+
+      await insertPermissions(id);
       return { status: "success" };
     }
 
     if (type === "folder") {
+      const checkPermissions = `SELECT * FROM permissions WHERE folder_id = $1 AND user_id = $2 AND can_manage = TRUE`;
+      const checkPermissionsResult = await (conn as Pool).query(
+        checkPermissions,
+        [id, user.id]
+      );
+      if (checkPermissionsResult.rows.length === 0)
+        return { status: "error", error: "You do not have permissions" };
 
-      const checkPermissions = `SELECT * FROM permissions WHERE folder_id = $1 AND user_id = $2 AND can_manage = TRUE`
-      const checkPermissionsResult = await (conn as Pool).query(checkPermissions, [id, user.id])
-      if(checkPermissionsResult.rows.length === 0) return { status: "error", error: "You do not have permissions" };
+      const deleteSubShares = async (folderId: string) => {
+        await (conn as Pool).query(
+          `DELETE FROM share WHERE folder_id = $1 AND user_id = $2`,
+          [folderId, userId]
+        );
+
+        const subfoldersQuery = `SELECT id FROM folders WHERE parent_id = $1`;
+        const subfoldersResult = await (conn as Pool).query(subfoldersQuery, [
+          folderId,
+        ]);
+
+        for (const subfolder of subfoldersResult.rows) {
+          await deleteSubShares(subfolder.id);
+        }
+
+        const filesQuery = `SELECT id FROM files WHERE folder_id = $1`;
+        const filesResult = await (conn as Pool).query(filesQuery, [folderId]);
+
+        for (const file of filesResult.rows) {
+          await (conn as Pool).query(
+            `DELETE FROM share WHERE file_id = $1 AND user_id = $2`,
+            [file.id, userId]
+          );
+        }
+      };
+
+      await deleteSubShares(id);
+
+      const parentFolderQuery = `
+        WITH RECURSIVE parent_folders AS (
+    SELECT id, parent_id FROM folders WHERE id = $1
+    UNION ALL
+    SELECT f.id, f.parent_id FROM folders f
+    INNER JOIN parent_folders pf ON f.id = pf.parent_id
+) 
+SELECT 1 FROM parent_folders pf 
+WHERE EXISTS (SELECT 1 FROM share WHERE folder_id = pf.id AND user_id = $2);
+`;
+
+      const parentFolderResult = await (conn as Pool).query(parentFolderQuery, [
+        id,
+        userId,
+      ]);
+
+      if (parentFolderResult.rows.length === 0) {
+        const query = `SELECT * FROM folders WHERE id = $1`;
+        const result = await (conn as Pool).query(query, [id]);
+        await (conn as Pool).query(
+          `INSERT INTO share (user_id, folder_id, owner_id) VALUES ($1, $2, $3)`,
+          [userId, id, result.rows[0].user_id]
+        );
+      }
 
       const insertPermissions = async (folderId: string) => {
-        const query = `INSERT INTO permissions (user_id, folder_id, can_read, can_write, can_delete, can_manage) VALUES ($1, $2, TRUE, FALSE, FALSE, FALSE)`;
+        const query = `
+          INSERT INTO permissions (user_id, folder_id, can_read, can_write, can_delete, can_manage)
+          VALUES ($1, $2, TRUE, FALSE, FALSE, FALSE)`;
         await (conn as Pool).query(query, [userId, folderId]);
 
         const filesQuery = `SELECT id FROM files WHERE folder_id = $1`;
         const filesResult = await (conn as Pool).query(filesQuery, [folderId]);
 
         for (const file of filesResult.rows) {
-          const fileQuery = `INSERT INTO permissions (user_id, file_id, can_read, can_write, can_delete, can_manage) VALUES ($1, $2, TRUE, FALSE, FALSE, FALSE)`;
-          await (conn as Pool).query(fileQuery, [userId, file.id]);
+          await insertPermissions(file.id);
         }
 
         const subfoldersQuery = `SELECT id FROM folders WHERE parent_id = $1`;
-        const subfoldersResult = await (conn as Pool).query(subfoldersQuery, [folderId]);
+        const subfoldersResult = await (conn as Pool).query(subfoldersQuery, [
+          folderId,
+        ]);
 
         for (const subfolder of subfoldersResult.rows) {
           await insertPermissions(subfolder.id);
@@ -226,7 +340,8 @@ export const addUserToShare = async (type: 'file' | 'folder', id: string, email:
       await insertPermissions(id);
       return { status: "success" };
     }
-    return { status: 'error', error: 'Invalid type' }
+
+    return { status: "error", error: "Invalid type" };
   } catch (error) {
     console.log(error);
     return { status: "error", error: "Something went wrong" };
@@ -249,10 +364,13 @@ export const changePermissions = async (
     }
 
     if (fileType === "file") {
-
-      const checkPermissions = `SELECT * FROM permissions WHERE file_id = $1 AND user_id = $2 AND can_manage = TRUE`
-      const checkPermissionsResult = await (conn as Pool).query(checkPermissions, [fileId, user.id])
-      if(checkPermissionsResult.rows.length === 0) return { status: "error", error: "You do not have permissions" };
+      const checkPermissions = `SELECT * FROM permissions WHERE file_id = $1 AND user_id = $2 AND can_manage = TRUE`;
+      const checkPermissionsResult = await (conn as Pool).query(
+        checkPermissions,
+        [fileId, user.id]
+      );
+      if (checkPermissionsResult.rows.length === 0)
+        return { status: "error", error: "You do not have permissions" };
 
       const query = `
         UPDATE permissions 
@@ -270,10 +388,13 @@ export const changePermissions = async (
     }
 
     if (fileType === "folder") {
-
-      const checkPermissions = `SELECT * FROM permissions WHERE folder_id = $1 AND user_id = $2 AND can_manage = TRUE`
-      const checkPermissionsResult = await (conn as Pool).query(checkPermissions, [fileId, user.id])
-      if(checkPermissionsResult.rows.length === 0) return { status: "error", error: "You do not have permissions" };
+      const checkPermissions = `SELECT * FROM permissions WHERE folder_id = $1 AND user_id = $2 AND can_manage = TRUE`;
+      const checkPermissionsResult = await (conn as Pool).query(
+        checkPermissions,
+        [fileId, user.id]
+      );
+      if (checkPermissionsResult.rows.length === 0)
+        return { status: "error", error: "You do not have permissions" };
 
       const updatePermissions = async (folderId: string) => {
         const query = `
@@ -327,45 +448,89 @@ export const changePermissions = async (
     return { status: "error", error: "Something went wrong" };
   }
 };
-export const removePermissions = async (userId: string, fileType: "file" | "folder", fileId: string) => {
+export const removePermissions = async (
+  userId: string,
+  fileType: "file" | "folder",
+  fileId: string
+) => {
   try {
     const user = await getUser();
     if (!user) {
       return { status: "error", error: "You must be logged in" };
     }
 
-
     if (fileType === "file") {
+      const checkPermissions = `
+        SELECT * FROM permissions 
+        WHERE file_id = $1 AND user_id = $2 AND can_manage = TRUE
+      `;
+      const checkPermissionsResult = await (conn as Pool).query(
+        checkPermissions,
+        [fileId, user.id]
+      );
+      if (checkPermissionsResult.rows.length === 0)
+        return { status: "error", error: "You do not have permissions" };
 
-      const checkPermissions = `SELECT * FROM permissions WHERE file_id = $1 AND user_id = $2 AND can_manage = TRUE`
-      const checkPermissionsResult = await (conn as Pool).query(checkPermissions, [fileId, user.id])
-      if(checkPermissionsResult.rows.length === 0) return { status: "error", error: "You do not have permissions" };
+      // Usuwamy permissions
+      await (conn as Pool).query(
+        `DELETE FROM permissions WHERE user_id = $1 AND file_id = $2`,
+        [userId, fileId]
+      );
 
-      const query = `DELETE FROM permissions WHERE user_id = $1 AND file_id = $2`;
-      await (conn as Pool).query(query, [userId, fileId]);
+      // Sprawdzamy, czy plik jest w share i usuwamy go
+      await (conn as Pool).query(
+        `DELETE FROM share WHERE user_id = $1 AND file_id = $2`,
+        [userId, fileId]
+      );
+
       return { status: "success" };
     }
 
     if (fileType === "folder") {
-
-      const checkPermissions = `SELECT * FROM permissions WHERE folder_id = $1 AND user_id = $2 AND can_manage = TRUE`
-      const checkPermissionsResult = await (conn as Pool).query(checkPermissions, [fileId, user.id])
-      if(checkPermissionsResult.rows.length === 0) return { status: "error", error: "You do not have permissions" };
+      const checkPermissions = `
+        SELECT * FROM permissions 
+        WHERE folder_id = $1 AND user_id = $2 AND can_manage = TRUE
+      `;
+      const checkPermissionsResult = await (conn as Pool).query(
+        checkPermissions,
+        [fileId, user.id]
+      );
+      if (checkPermissionsResult.rows.length === 0)
+        return { status: "error", error: "You do not have permissions" };
 
       const deletePermissions = async (folderId: string) => {
-        const query = `DELETE FROM permissions WHERE user_id = $1 AND folder_id = $2`;
-        await (conn as Pool).query(query, [userId, folderId]);
+        // Usuwamy permissions dla folderu
+        await (conn as Pool).query(
+          `DELETE FROM permissions WHERE user_id = $1 AND folder_id = $2`,
+          [userId, folderId]
+        );
 
+        // Usuwamy share dla folderu
+        await (conn as Pool).query(
+          `DELETE FROM share WHERE user_id = $1 AND folder_id = $2`,
+          [userId, folderId]
+        );
+
+        // Pobieramy wszystkie pliki w folderze i usuwamy permissions + share
         const filesQuery = `SELECT id FROM files WHERE folder_id = $1`;
         const filesResult = await (conn as Pool).query(filesQuery, [folderId]);
 
         for (const file of filesResult.rows) {
-          const fileQuery = `DELETE FROM permissions WHERE user_id = $1 AND file_id = $2`;
-          await (conn as Pool).query(fileQuery, [userId, file.id]);
+          await (conn as Pool).query(
+            `DELETE FROM permissions WHERE user_id = $1 AND file_id = $2`,
+            [userId, file.id]
+          );
+          await (conn as Pool).query(
+            `DELETE FROM share WHERE user_id = $1 AND file_id = $2`,
+            [userId, file.id]
+          );
         }
 
+        // Pobieramy subfoldery i usuwamy ich permissions + share
         const subfoldersQuery = `SELECT id FROM folders WHERE parent_id = $1`;
-        const subfoldersResult = await (conn as Pool).query(subfoldersQuery, [folderId]);
+        const subfoldersResult = await (conn as Pool).query(subfoldersQuery, [
+          folderId,
+        ]);
 
         for (const subfolder of subfoldersResult.rows) {
           await deletePermissions(subfolder.id);
@@ -382,3 +547,4 @@ export const removePermissions = async (userId: string, fileType: "file" | "fold
     return { status: "error", error: "Something went wrong" };
   }
 };
+

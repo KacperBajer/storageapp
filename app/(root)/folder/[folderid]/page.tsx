@@ -15,7 +15,7 @@ const page = async ({ params }: { params?: Promise<any> }) => {
   const { folderid } = await params;
   const permissions = await getFolderPermissions(folderid);
   if (!permissions.can_read) redirect("/");
-
+  console.log(permissions)
   const files = (await getFiles(folderid)) || [];
 
   return (

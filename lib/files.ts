@@ -16,41 +16,83 @@ export const getFiles = async (folderId: string) => {
     const user = await getUser();
     if (!user) return;
 
+    const folderCheckQuery = `SELECT parent_id, user_id FROM folders WHERE id = $1`;
+    const folderCheckResult = await (conn as Pool).query(folderCheckQuery, [folderId]);
+
+    if (folderCheckResult.rows.length === 0) return [];
+
+    const { parent_id, user_id } = folderCheckResult.rows[0];
+
+    if (!parent_id && user_id !== user.id) {
+      const shareQuery = `
+        SELECT 
+            f.id, 
+            f.name, 
+            f.created_at,
+            f.user_id,
+            'folder' AS type,
+            p.can_read,
+            p.can_write,
+            p.can_delete,
+            p.can_manage
+        FROM share s
+        JOIN folders f ON f.id = s.folder_id
+        JOIN permissions p ON p.folder_id = f.id AND p.user_id = $2
+        WHERE s.owner_id = $1 AND s.user_id = $2
+          
+        UNION
+
+        SELECT 
+            fi.id, 
+            fi.name, 
+            fi.created_at,
+            fi.user_id,
+            'file' AS type,
+            p.can_read,
+            p.can_write,
+            p.can_delete,
+            p.can_manage
+        FROM share s
+        JOIN files fi ON fi.id = s.file_id
+        JOIN permissions p ON p.file_id = fi.id AND p.user_id = $2
+        WHERE s.owner_id = $1 AND s.user_id = $2;
+      `;
+
+      const shareResult = await (conn as Pool).query(shareQuery, [user_id, user.id]);
+      return shareResult.rows;
+    }
+
     const query = `
-            SELECT 
-                f.id, 
-                f.name, 
-                f.created_at,
-                f.user_id,
-                'file' AS type,
-                p.can_read, 
-                p.can_write, 
-                p.can_delete,
-                p.can_manage
-            FROM files f
-            JOIN permissions p ON p.file_id = f.id
-            WHERE f.folder_id = $1
-            AND p.user_id = $2
-            AND p.can_read = TRUE
-            
-            UNION
-            
-            SELECT 
-                d.id, 
-                d.name,
-                d.created_at,
-                d.user_id,
-                'folder' AS type,
-                p.can_read, 
-                p.can_write, 
-                p.can_delete,
-                p.can_manage
-            FROM folders d
-            JOIN permissions p ON p.folder_id = d.id
-            WHERE d.parent_id = $1
-            AND p.user_id = $2
-            AND p.can_read = TRUE;
-        `;
+        SELECT 
+            f.id, 
+            f.name, 
+            f.created_at,
+            f.user_id,
+            'file' AS type,
+            p.can_read, 
+            p.can_write, 
+            p.can_delete,
+            p.can_manage
+        FROM files f
+        JOIN permissions p ON p.file_id = f.id AND p.user_id = $2
+        WHERE f.folder_id = $1 AND p.can_read = TRUE
+        
+        UNION
+        
+        SELECT 
+            d.id, 
+            d.name,
+            d.created_at,
+            d.user_id,
+            'folder' AS type,
+            p.can_read, 
+            p.can_write, 
+            p.can_delete,
+            p.can_manage
+        FROM folders d
+        JOIN permissions p ON p.folder_id = d.id AND p.user_id = $2
+        WHERE d.parent_id = $1 AND p.can_read = TRUE;
+    `;
 
     const result = await (conn as Pool).query(query, [folderId, user.id]);
     return result.rows;
@@ -59,6 +101,7 @@ export const getFiles = async (folderId: string) => {
     return [];
   }
 };
+
 
 type Path = {
   name: string;
