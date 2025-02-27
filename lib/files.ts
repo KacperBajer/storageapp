@@ -11,20 +11,11 @@ import fs from "fs";
 import archiver from "archiver";
 import { v4 as uuidv4 } from "uuid";
 
-export const getFiles = async (folderId: string) => {
+export const getShares = async (owner_id: string) => {
   try {
     const user = await getUser();
     if (!user) return;
-
-    const folderCheckQuery = `SELECT parent_id, user_id FROM folders WHERE id = $1`;
-    const folderCheckResult = await (conn as Pool).query(folderCheckQuery, [folderId]);
-
-    if (folderCheckResult.rows.length === 0) return [];
-
-    const { parent_id, user_id } = folderCheckResult.rows[0];
-
-    if (!parent_id && user_id !== user.id) {
-      const shareQuery = `
+    const shareQuery = `
         SELECT 
             f.id, 
             f.name, 
@@ -58,9 +49,27 @@ export const getFiles = async (folderId: string) => {
         WHERE s.owner_id = $1 AND s.user_id = $2;
       `;
 
-      const shareResult = await (conn as Pool).query(shareQuery, [user_id, user.id]);
-      return shareResult.rows;
-    }
+      const shareResult = await (conn as Pool).query(shareQuery, [owner_id, user.id]);
+      return shareResult.rows
+  } catch (error) {
+    console.log(error)
+    return []
+  }
+}
+
+export const getFiles = async (folderId: string) => {
+  try {
+    const user = await getUser();
+    if (!user) return;
+
+    const folderCheckQuery = `SELECT parent_id, user_id FROM folders WHERE id = $1`;
+    const folderCheckResult = await (conn as Pool).query(folderCheckQuery, [folderId]);
+
+    if (folderCheckResult.rows.length === 0) return [];
+
+    const { parent_id, user_id } = folderCheckResult.rows[0];
+
+    if (!parent_id && user_id !== user.id) return await getShares(user_id)
 
     const query = `
         SELECT 
@@ -110,16 +119,26 @@ type Path = {
 
 export const getFolderPath = async (folderId: string) => {
   try {
+
+    const user = await getUser()
+    if(!user) return []
+
     let pathParts: Path[] = [];
     let currentId: string | null = folderId;
-    const query = `SELECT name, parent_id, id FROM folders WHERE id = $1`;
+    
+    const query = `
+      SELECT f.name, f.parent_id, f.id, p.can_read 
+      FROM folders f
+      JOIN permissions p ON f.id = p.folder_id
+      WHERE f.id = $1 AND p.user_id = $2 AND p.can_read = true
+    `;
+    
     while (currentId !== null) {
-      const result = (await (conn as Pool).query(query, [currentId])) as any;
+      const result = (await (conn as Pool).query(query, [currentId, user.id])) as any;
 
       if (result.rows.length === 0) break;
 
       const { name, parent_id, id } = result.rows[0];
-
       pathParts.unshift({ name: name, id: id });
       currentId = parent_id;
     }

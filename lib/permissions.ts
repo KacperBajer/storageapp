@@ -4,7 +4,6 @@ import { Pool } from "pg";
 import conn from "./db";
 import { Permissions } from "./types";
 import { getUser } from "./users";
-import { v4 as uuidv4 } from "uuid";
 
 export const getFolderPermissions = async (id: string) => {
   try {
@@ -156,38 +155,10 @@ WHERE p.folder_id = $1;`;
   }
 };
 
-export const generateLink = async (
-  type: "download" | "share",
-  fileType: "folder" | "file",
-  fileId: string,
-  userId: string
-) => {
-  try {
-    if (fileType === "file") {
-      const query = `INSERT INTO links (type, file_id, user_id) VALUES ($1, $2, $3) RETURNING id`;
-      const result = await (conn as Pool).query(query, [type, fileId, userId]);
-      if (result.rows.length === 0)
-        return { status: "error", error: "Something went wrong" };
-      const link = `http://78.31.151.253:2999/sharelink/${result.rows[0].id}`;
-      return { status: "success", link: link };
-    }
-    if (fileType === "folder") {
-      const query = `INSERT INTO links (type, folder_id, user_id) VALUES ($1, $2, $3) RETURNING id`;
-      const result = await (conn as Pool).query(query, [type, fileId, userId]);
-      if (result.rows.length === 0)
-        return { status: "error", error: "Something went wrong" };
-      const link = `http://78.31.151.253:2999/sharelink/${result.rows[0].id}`;
-      return { status: "success", link: link };
-    }
-    return { status: "error", error: "Invalid type" };
-  } catch (error) {
-    return { status: "error", error: "Something went wrong" };
-  }
-};
 export const addUserToShare = async (
   type: "file" | "folder",
   id: string,
-  email: string
+  email: string,
 ) => {
   try {
     const user = await getUser();
@@ -202,6 +173,8 @@ export const addUserToShare = async (
 
     if (sharingUserResult.rows.length === 0)
       return { status: "error", error: "Cannot find user" };
+
+    if(sharingUserResult.rows[0].id === user.id) return { status: "error", error: "Cannot share for himself" };
 
     const userId = sharingUserResult.rows[0].id;
 
@@ -242,10 +215,13 @@ WHERE EXISTS (SELECT 1 FROM share WHERE folder_id = pf.id AND user_id = $2);
       }
 
       const insertPermissions = async (fileId: string) => {
-        const permissionsQuery = `
-          INSERT INTO permissions (user_id, file_id, can_read, can_write, can_delete, can_manage)
-          VALUES ($1, $2, TRUE, FALSE, FALSE, FALSE)`;
-        await (conn as Pool).query(permissionsQuery, [userId, fileId]);
+        const insertQuery = `
+            INSERT INTO permissions (user_id, file_id, folder_id, can_read, can_write, can_delete, can_manage)
+            VALUES ($1, CASE WHEN EXISTS (SELECT 1 FROM files WHERE id = $2) THEN $2 ELSE NULL END, 
+                        CASE WHEN EXISTS (SELECT 1 FROM folders WHERE id = $2) THEN $2 ELSE NULL END, 
+                        TRUE, FALSE, FALSE, FALSE)
+        `;
+        await (conn as Pool).query(insertQuery, [userId, fileId]);
       };
 
       await insertPermissions(id);
@@ -315,10 +291,13 @@ WHERE EXISTS (SELECT 1 FROM share WHERE folder_id = pf.id AND user_id = $2);
       }
 
       const insertPermissions = async (folderId: string) => {
-        const query = `
-          INSERT INTO permissions (user_id, folder_id, can_read, can_write, can_delete, can_manage)
-          VALUES ($1, $2, TRUE, FALSE, FALSE, FALSE)`;
-        await (conn as Pool).query(query, [userId, folderId]);
+        const insertQuery = `
+            INSERT INTO permissions (user_id, file_id, folder_id, can_read, can_write, can_delete, can_manage)
+            VALUES ($1, CASE WHEN EXISTS (SELECT 1 FROM files WHERE id = $2) THEN $2 ELSE NULL END, 
+                        CASE WHEN EXISTS (SELECT 1 FROM folders WHERE id = $2) THEN $2 ELSE NULL END, 
+                        TRUE, FALSE, FALSE, FALSE)
+        `;
+        await (conn as Pool).query(insertQuery, [userId, folderId]);
 
         const filesQuery = `SELECT id FROM files WHERE folder_id = $1`;
         const filesResult = await (conn as Pool).query(filesQuery, [folderId]);

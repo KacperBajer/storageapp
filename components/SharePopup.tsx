@@ -1,11 +1,13 @@
 'use client'
 import { getZips } from '@/lib/files'
-import { addUserToShare, generateLink, getShares } from '@/lib/permissions'
+import { addUserToShare, getShares } from '@/lib/permissions'
 import { File, Permissions, User, UserWithPermissions, Zip } from '@/lib/types'
 import { formatDate } from '@/lib/utils'
 import React, { FormEvent, useEffect, useRef, useState } from 'react'
 import UserSharesTable from './UserSharesTable'
 import { toast } from 'react-toastify'
+import { generateShareLink } from '@/lib/links'
+import Loading from './Loading'
 
 type Props = {
     handleClose: () => void
@@ -19,6 +21,7 @@ const SharePopup = ({ handleClose, file, user }: Props) => {
     const [isLoading, setIsLoading] = useState(true)
     const boxRef = useRef<HTMLDivElement | null>(null);
     const [email, setEmail] = useState('')
+    const [isLoadingAdding, setIsLoadingAdding] = useState(false)
 
     const getData = async () => {
         const resData = await getShares(file.id, file.type)
@@ -29,7 +32,7 @@ const SharePopup = ({ handleClose, file, user }: Props) => {
     }
 
     const createLink = async () => {
-        const generate = await generateLink('share', file.type, file.id, user.id)
+        const generate = await generateShareLink(file.type, file.id, user.id)
         if(generate.status === 'error') {
             toast.error(generate.error || 'Something went wrong')
             return
@@ -40,13 +43,17 @@ const SharePopup = ({ handleClose, file, user }: Props) => {
     
     const addUser = async (e: FormEvent) => {
         e.preventDefault()
+        if(isLoadingAdding) return
+        setIsLoadingAdding(true)
         const res = await addUserToShare(file.type, file.id, email)
         if(res.status === 'error') {
             toast.error(res.error || 'Something went wrong')
+            setIsLoadingAdding(false)
             return
         }
         toast.success('User added')
         getData()
+        setIsLoadingAdding(false)
     }
 
     useEffect(() => {
@@ -82,7 +89,7 @@ const SharePopup = ({ handleClose, file, user }: Props) => {
                 <div className='gap-2 flex mt-3 w-full'>
                     <form onSubmit={addUser} className='flex gap-2'>
                         <input value={email} onChange={(e) => setEmail(e.target.value)} className='appearance-none outline-none rounded-md border border-dark-200 py-1.5 px-4 bg-transparent' placeholder='Email' type='email' />
-                        <button className='bg-blue-600 px-4 py-1.5 rounded-md text-sm'>Add User</button>
+                        <button type='submit' disabled={isLoadingAdding} className='bg-blue-600 px-4 py-1.5 rounded-md text-sm w-24'>{isLoadingAdding ? <Loading /> : 'Add User'}</button>
                     </form>
                     <button onClick={createLink} className='bg-black/50 px-4 py-1.5 rounded-md text-sm'>Create invite link</button>
                 </div>
